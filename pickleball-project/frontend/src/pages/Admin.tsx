@@ -89,9 +89,9 @@ function Admin() {
                 <div style={{ flex: 1, backgroundColor: '#eafaf1', padding: '20px', borderRadius: '8px', height: 'fit-content' }}>
                     <h3>Thêm sân mới</h3>
                     <form onSubmit={handleCreateCourt} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        <input type="text" placeholder="Tên sân (VD: Sân VIP 3)" required value={courtFormData.name} onChange={(e) => setCourtFormData({ ...courtFormData, name: e.target.value })} style={{ padding: '8px' }} />
-                        <input type="text" placeholder="Vị trí (VD: Tầng 2)" required value={courtFormData.location} onChange={(e) => setCourtFormData({ ...courtFormData, location: e.target.value })} style={{ padding: '8px' }} />
-                        <input type="number" placeholder="Giá tiền/Giờ (VD: 150000)" required value={courtFormData.pricePerHour} onChange={(e) => setCourtFormData({ ...courtFormData, pricePerHour: e.target.value })} style={{ padding: '8px' }} />
+                        <input type="text" placeholder="Tên sân" required value={courtFormData.name} onChange={(e) => setCourtFormData({ ...courtFormData, name: e.target.value })} style={{ padding: '8px' }} />
+                        <input type="text" placeholder="Vị trí" required value={courtFormData.location} onChange={(e) => setCourtFormData({ ...courtFormData, location: e.target.value })} style={{ padding: '8px' }} />
+                        <input type="number" placeholder="Giá tiền/Giờ" required value={courtFormData.pricePerHour} onChange={(e) => setCourtFormData({ ...courtFormData, pricePerHour: e.target.value })} style={{ padding: '8px' }} />
                         <button type="submit" style={{ padding: '10px', backgroundColor: '#27ae60', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '4px' }}>Tạo Sân Mới</button>
                     </form>
                 </div>
