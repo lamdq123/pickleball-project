@@ -1,0 +1,40 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String    @unique
+  phone     String?
+  createdAt DateTime  @default(now())
+  bookings  Booking[] // Thêm dòng này: 1 User có thể có nhiều Booking
+}
+
+model Court {
+  id           Int       @id @default(autoincrement())
+  name         String
+  location     String
+  pricePerHour Float
+  createdAt    DateTime  @default(now())
+  bookings     Booking[] // Thêm dòng này: 1 Sân có thể có nhiều Booking
+}
+
+// BẢNG MỚI: Lưu trữ thông tin Đặt Sân
+model Booking {
+  id        Int      @id @default(autoincrement())
+  userId    Int      // ID của người đặt
+  courtId   Int      // ID của sân được đặt
+  bookDate  String   // Ngày chơi (Ví dụ: "2026-07-10")
+  timeSlot  String   // Khung giờ (Ví dụ: "17:00 - 18:00")
+  createdAt DateTime @default(now())
+
+  // Khai báo mối quan hệ để Prisma hiểu
+  user      User     @relation(fields: [userId], references: [id])
+  court     Court    @relation(fields: [courtId], references: [id])
+}
