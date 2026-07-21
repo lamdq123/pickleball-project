@@ -10,20 +10,39 @@ function Home() {
 
     const [selectedCourt, setSelectedCourt] = useState<Court | null>(null);
     const [bookingData, setBookingData] = useState({ userId: '', bookDate: '', timeSlot: '17:00 - 18:00' });
+    // Thêm danh sách TẤT CẢ các ca trong ngày (có thể thêm bớt tùy ý)
+    const ALL_TIME_SLOTS = ["17:00 - 18:00", "18:00 - 19:00", "19:00 - 20:00", "20:00 - 21:00"];
 
+    // Thêm State này để chứa danh sách các ca đã bị người khác đặt
+    const [bookedSlots, setBookedSlots] = useState<string[]>([]);
     // Lấy dữ liệu Sân và Khách hàng (để đưa vào ô chọn người đặt)
     useEffect(() => {
         fetch('/api/users').then(r => r.json()).then(setUsers);
         fetch('/api/courts').then(r => r.json()).then(setCourts);
     }, []);
 
+    useEffect(() => {
+        // Chỉ gọi API khi đã chọn Sân và đã chọn Ngày
+        if (selectedCourt && bookingData.bookDate) {
+            fetch(`/api/check-slots?courtId=${selectedCourt.id}&date=${bookingData.bookDate}`)
+                .then(r => r.json())
+                .then(data => {
+                    setBookedSlots(data); // Lưu danh sách các giờ đã bị đặt vào State
+                    setBookingData(prev => ({ ...prev, timeSlot: '' })); // Reset lại giờ khách đang chọn
+                });
+        } else {
+            setBookedSlots([]); // Nếu chưa chọn ngày thì xóa trắng danh sách
+        }
+    }, [selectedCourt, bookingData.bookDate]);
     // Hàm xử lý đặt sân đã có tính năng chống trùng lịch
     const handleBookCourt = async (e: FormEvent) => {
         e.preventDefault();
         if (!bookingData.userId) return alert("Vui lòng chọn người đặt!");
 
+        if (!bookingData.timeSlot) return alert("Vui lòng chọn một khung giờ chơi!"); // hàm kiểm tra xem khách đã chọn giờ chưa
+
         try {
-            const res = await fetch('http://localhost:3000/api/bookings', {
+            const res = await fetch('/api/bookings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -77,11 +96,34 @@ function Home() {
                             {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                         </select>
                         <input type="date" required value={bookingData.bookDate} onChange={(e) => setBookingData({ ...bookingData, bookDate: e.target.value })} style={{ padding: '8px' }} />
-                        <select value={bookingData.timeSlot} onChange={(e) => setBookingData({ ...bookingData, timeSlot: e.target.value })} style={{ padding: '8px' }}>
-                            <option value="17:00 - 18:00">17:00 - 18:00</option>
-                            <option value="18:00 - 19:00">18:00 - 19:00</option>
-                            <option value="19:00 - 20:00">19:00 - 20:00</option>
-                        </select>
+                        {/* DANH SÁCH GIỜ (THÔNG MINH) */}
+                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', margin: '10px 0' }}>
+                            {ALL_TIME_SLOTS.map(slot => {
+                                const isBooked = bookedSlots.includes(slot); // Kiểm tra xem giờ này có nằm trong danh sách đen không
+                                const isSelected = bookingData.timeSlot === slot; // Giờ này khách đang bấm chọn
+
+                                return (
+                                    <button
+                                        key={slot}
+                                        type="button"
+                                        disabled={isBooked} // Khóa nút nếu đã có người đặt
+                                        onClick={() => setBookingData({ ...bookingData, timeSlot: slot })}
+                                        style={{
+                                            padding: '10px 15px',
+                                            backgroundColor: isBooked ? '#bdc3c7' : isSelected ? '#d35400' : '#ffffff',
+                                            color: isBooked ? '#7f8c8d' : isSelected ? '#ffffff' : '#2c3e50',
+                                            border: `2px solid ${isSelected ? '#d35400' : '#bdc3c7'}`,
+                                            cursor: isBooked ? 'not-allowed' : 'pointer',
+                                            borderRadius: '5px',
+                                            fontWeight: 'bold',
+                                            transition: '0.2s'
+                                        }}
+                                    >
+                                        {isBooked ? 'Đã hết' : slot}
+                                    </button>
+                                )
+                            })}
+                        </div>
                         <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#d35400', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '5px' }}>Xác nhận đặt</button>
                         <button type="button" onClick={() => setSelectedCourt(null)} style={{ padding: '10px 20px', cursor: 'pointer', borderRadius: '5px' }}>Hủy</button>
                     </form>
