@@ -47,23 +47,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
 
       // Gửi email
-      await transporter.sendMail({
-        from: `"Hệ Thống Đặt Sân: " <${process.env.EMAIL_USER}>`,
-        to: newBooking.user.email,
-        subject: '🎾 Xác nhận đặt sân thành công!',
-        html: `
-          <div>
-            <p>Xin chào ${newBooking.user.name || 'khách hàng'},</p>
-            <p>Chúng tôi đã nhận được yêu cầu đặt sân của bạn. Thông tin chi tiết như sau:</p>
-            <ul>
-              <li><strong>Sân của bạn là:</strong> ${newBooking.court.name || 'Không xác định'}</li>
-              <li><strong>Ngày đặt:</strong> ${newBooking.bookDate}</li>
-              <li><strong>Thời gian:</strong> ${newBooking.timeSlot}</li>
-            </ul>
-            <p>Chúc bạn có 1 ngày thật tốt lành và cảm ơn vì đã sử dụng dịch vụ của chúng tôi.</p>
-          </div>
-        `,
-      });
+      try {
+        await transporter.sendMail({
+          from: `"Pickleball Court Management" <${process.env.EMAIL_USER}>`,
+          to: newBooking.user.email,
+          subject: '🎾 Xác nhận đặt sân thành công! 🎉',
+          html: `
+              <div>
+                <p>Xin chào ${newBooking.user.name || 'khách hàng'},</p>
+                <p>Chúng tôi đã nhận được yêu cầu đặt sân của bạn. Thông tin chi tiết như sau:</p>
+                <ul>
+                  <li><strong>Sân của bạn là:</strong> ${newBooking.court.name || 'Không xác định'}</li>
+                  <li><strong>Ngày đặt:</strong> ${newBooking.bookDate}</li>
+                  <li><strong>Thời gian:</strong> ${newBooking.timeSlot}</li>
+                </ul>
+                <p>Chúc bạn có 1 ngày thật tốt lành và cảm ơn vì đã sử dụng dịch vụ của chúng tôi ❤️.</p>
+              </div>
+            `,
+        });
+      } catch (emailError) {
+        console.log("Đặt sân thành công nhưng lỗi gửi email:", emailError);
+        // Không return error ở đây, cứ cho đi tiếp để trả về 200 OK
+      }
 
       return res.status(200).json(newBooking);
     } catch (error) {

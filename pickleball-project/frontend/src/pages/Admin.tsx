@@ -53,7 +53,7 @@ function Admin() {
     // Hàm xóa Sân
     const handleDeleteCourt = async (id: number) => {
         if (!window.confirm("Bạn có chắc chắn muốn xóa sân này không?")) return;
-        const res = await fetch(`/api/courts/${id}`, { method: 'DELETE' });
+        const res = await fetch(`/api/courts?id=${id}`, { method: 'DELETE' });
         if (res.ok) {
             alert("Đã xóa sân thành công!");
             fetchCourts();
@@ -66,7 +66,11 @@ function Admin() {
     // Hàm hủy lịch
     const handleCancelBooking = async (id: number) => {
         if (!window.confirm("Hủy lịch đặt này?")) return;
-        const res = await fetch(`/api/bookings/${id}`, { method: 'DELETE' });
+        const res = await fetch(`/api/bookings?id=${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            alert("Đã hủy lịch thành công!");
+            fetchBookings();
+        }
         if (res.ok) { fetchBookings(); }
     };
 
