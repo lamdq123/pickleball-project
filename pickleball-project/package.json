@@ -10,5 +10,8 @@
     "@types/nodemailer": "^8.0.1",
     "prisma": "^6.9.0",
     "typescript": "^6.0.3"
+  },
+  "scripts": {
+    "postinstall": "prisma generate"
   }
 }
