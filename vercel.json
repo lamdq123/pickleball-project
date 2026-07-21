@@ -1,25 +1,25 @@
 {
-    "version": 2,
-    "rewrites": [
-        {
-            "source": "/api/(.*)",
-            "destination": "/api/$1"
-        },
-        {
-            "source": "/",
-            "destination": "/frontend/dist/index.html"
-        },
-        {
-            "source": "/login",
-            "destination": "/frontend/dist/index.html"
-        },
-        {
-            "source": "/admin",
-            "destination": "/frontend/dist/index.html"
-        },
-        {
-            "source": "/(.*)",
-            "destination": "/frontend/dist/$1"
-        }
-    ]
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    },
+    {
+      "source": "/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/login",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/$1"
+    }
+  ]
 }
