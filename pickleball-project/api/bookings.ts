@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { PrismaClient } from '@prisma/client';
 import nodemailer from 'nodemailer';
-
+import { verifyAdmin } from './auth-middleware';
 const prisma = new PrismaClient();
 
 // Cấu hình transporter (tương tự như bạn đã làm ở backend cũ)
@@ -18,6 +18,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // 1. GET: Lấy danh sách
   if (method === 'GET') {
+    if (!verifyAdmin(req, res)) return;
     try {
       const bookings = await prisma.booking.findMany({
         include: { user: true, court: true },
@@ -30,6 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // 2. POST: Đặt sân
   if (method === 'POST') {
+    if (!verifyAdmin(req, res)) return;
     try {
       const { userId, courtId, bookDate, timeSlot } = req.body;
 

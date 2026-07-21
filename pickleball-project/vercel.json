@@ -6,12 +6,20 @@
             "destination": "/api/$1"
         },
         {
-            "source": "/(.*)",
-            "destination": "/frontend/dist/$1"
+            "source": "/",
+            "destination": "/frontend/dist/index.html"
+        },
+        {
+            "source": "/login",
+            "destination": "/frontend/dist/index.html"
+        },
+        {
+            "source": "/admin",
+            "destination": "/frontend/dist/index.html"
         },
         {
             "source": "/(.*)",
-            "destination": "/frontend/dist/index.html"
+            "destination": "/frontend/dist/$1"
         }
     ]
 }
