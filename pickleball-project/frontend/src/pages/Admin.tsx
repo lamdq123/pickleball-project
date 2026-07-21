@@ -14,9 +14,9 @@ function Admin() {
     // Thêm state cho form tạo Sân mới
     const [courtFormData, setCourtFormData] = useState({ name: '', location: '', pricePerHour: '' });
 
-    const fetchUsers = () => fetch('http://localhost:3000/api/users').then(r => r.json()).then(setUsers);
-    const fetchCourts = () => fetch('http://localhost:3000/api/courts').then(r => r.json()).then(setCourts);
-    const fetchBookings = () => fetch('http://localhost:3000/api/bookings').then(r => r.json()).then(setBookings);
+    const fetchUsers = () => fetch('/api/users').then(r => r.json()).then(setUsers);
+    const fetchCourts = () => fetch('/api/courts').then(r => r.json()).then(setCourts);
+    const fetchBookings = () => fetch('/api/bookings').then(r => r.json()).then(setBookings);
 
     useEffect(() => {
         Promise.all([fetchUsers(), fetchCourts(), fetchBookings()]).then(() => setLoading(false));
@@ -25,7 +25,7 @@ function Admin() {
     // Hàm tạo người dùng
     const handleRegisterUser = async (e: FormEvent) => {
         e.preventDefault();
-        const res = await fetch('http://localhost:3000/api/users', {
+        const res = await fetch('/api/users', {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(userFormData),
         });
         if (res.ok) { alert("Thêm thành viên thành công!"); setUserFormData({ name: '', email: '', phone: '' }); fetchUsers(); }
@@ -34,7 +34,7 @@ function Admin() {
     // Hàm tạo Sân mới
     const handleCreateCourt = async (e: FormEvent) => {
         e.preventDefault();
-        const res = await fetch('http://localhost:3000/api/courts', {
+        const res = await fetch('/api/courts', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
