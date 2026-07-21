@@ -14,9 +14,14 @@ function Admin() {
     // Thêm state cho form tạo Sân mới
     const [courtFormData, setCourtFormData] = useState({ name: '', location: '', pricePerHour: '' });
 
-    const fetchUsers = () => fetch('/api/users').then(r => r.json()).then(setUsers);
-    const fetchCourts = () => fetch('/api/courts').then(r => r.json()).then(setCourts);
-    const fetchBookings = () => fetch('/api/bookings').then(r => r.json()).then(setBookings);
+    // Lấy vé một lần để dùng chung
+    const token = localStorage.getItem('admin_token');
+    const authHeaders = { 'Authorization': `Bearer ${token}` };
+
+    // Sửa 3 dòng fetch cũ thành thế này:
+    const fetchUsers = () => fetch('/api/users', { headers: authHeaders }).then(r => r.json()).then(setUsers);
+    const fetchCourts = () => fetch('/api/courts', { headers: authHeaders }).then(r => r.json()).then(setCourts);
+    const fetchBookings = () => fetch('/api/bookings', { headers: authHeaders }).then(r => r.json()).then(setBookings);
 
     useEffect(() => {
         Promise.all([fetchUsers(), fetchCourts(), fetchBookings()]).then(() => setLoading(false));
@@ -25,8 +30,14 @@ function Admin() {
     // Hàm tạo người dùng
     const handleRegisterUser = async (e: FormEvent) => {
         e.preventDefault();
+        const token = localStorage.getItem('admin_token'); // Lấy vé ra
         const res = await fetch('/api/users', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(userFormData),
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` // 👉 Nhét thêm vé vào đây
+            },
+            body: JSON.stringify(userFormData),
         });
         if (res.ok) { alert("Thêm thành viên thành công!"); setUserFormData({ name: '', email: '', phone: '' }); fetchUsers(); }
     };
@@ -34,9 +45,13 @@ function Admin() {
     // Hàm tạo Sân mới
     const handleCreateCourt = async (e: FormEvent) => {
         e.preventDefault();
+        const token = localStorage.getItem('admin_token'); // Lấy vé ra
         const res = await fetch('/api/courts', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` // 👉 Nhét thêm vé vào đây
+            },
             body: JSON.stringify({
                 name: courtFormData.name,
                 location: courtFormData.location,
@@ -53,7 +68,14 @@ function Admin() {
     // Hàm xóa Sân
     const handleDeleteCourt = async (id: number) => {
         if (!window.confirm("Bạn có chắc chắn muốn xóa sân này không?")) return;
-        const res = await fetch(`/api/courts?id=${id}`, { method: 'DELETE' });
+        const token = localStorage.getItem('admin_token');
+        const res = await fetch(`/api/courts?id=${id}`, {
+            method: 'DELETE',
+            headers: {
+                // 👉 CHÌA VÉ RA ĐÂY:
+                'Authorization': `Bearer ${token}`
+            }
+        });
         if (res.ok) {
             alert("Đã xóa sân thành công!");
             fetchCourts();
@@ -66,7 +88,13 @@ function Admin() {
     // Hàm hủy lịch
     const handleCancelBooking = async (id: number) => {
         if (!window.confirm("Hủy lịch đặt này?")) return;
-        const res = await fetch(`/api/bookings?id=${id}`, { method: 'DELETE' });
+        const token = localStorage.getItem('admin_token');
+        const res = await fetch(`/api/bookings?id=${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
         if (res.ok) {
             alert("Đã hủy lịch thành công!");
             fetchBookings();
@@ -80,7 +108,7 @@ function Admin() {
             <h1 style={{ color: '#d35400' }}>🛠️ Bảng Điều Khiển Quản Trị (Admin)</h1>
             <button
                 onClick={() => {
-                    localStorage.removeItem('isLoggedIn'); // Vứt chìa khóa đi
+                    localStorage.removeItem('admin_token'); // Vứt chìa khóa đi
                     window.location.href = '/login'; // Đẩy về trang đăng nhập
                 }}
                 style={{ padding: '10px 20px', backgroundColor: '#7f8c8d', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
@@ -93,9 +121,9 @@ function Admin() {
                 <div style={{ flex: 1, backgroundColor: '#eafaf1', padding: '20px', borderRadius: '8px', height: 'fit-content' }}>
                     <h3>Thêm sân mới</h3>
                     <form onSubmit={handleCreateCourt} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        <input type="text" placeholder="Tên sân" required value={courtFormData.name} onChange={(e) => setCourtFormData({ ...courtFormData, name: e.target.value })} style={{ padding: '8px' }} />
-                        <input type="text" placeholder="Vị trí" required value={courtFormData.location} onChange={(e) => setCourtFormData({ ...courtFormData, location: e.target.value })} style={{ padding: '8px' }} />
-                        <input type="number" placeholder="Giá tiền/Giờ" required value={courtFormData.pricePerHour} onChange={(e) => setCourtFormData({ ...courtFormData, pricePerHour: e.target.value })} style={{ padding: '8px' }} />
+                        <input type="text" placeholder="Tên sân" required value={courtFormData.name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCourtFormData({ ...courtFormData, name: e.target.value })} style={{ padding: '8px' }} />
+                        <input type="text" placeholder="Vị trí" required value={courtFormData.location} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCourtFormData({ ...courtFormData, location: e.target.value })} style={{ padding: '8px' }} />
+                        <input type="number" placeholder="Giá tiền/Giờ" required value={courtFormData.pricePerHour} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCourtFormData({ ...courtFormData, pricePerHour: e.target.value })} style={{ padding: '8px' }} />
                         <button type="submit" style={{ padding: '10px', backgroundColor: '#27ae60', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '4px' }}>Tạo Sân Mới</button>
                     </form>
                 </div>
