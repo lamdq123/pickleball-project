@@ -3,12 +3,13 @@ import { useEffect, useState, type FormEvent } from 'react';
 interface User { id: number; name: string; email: string; phone: string | null; }
 interface Court { id: number; name: string; location: string; pricePerHour: number; }
 interface Booking { id: number; user: User; court: Court; bookDate: string; timeSlot: string; }
-
+import { useNavigate } from 'react-router-dom';
 function Admin() {
     const [users, setUsers] = useState<User[]>([]);
     const [courts, setCourts] = useState<Court[]>([]);
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
+    const navigate = useNavigate();
     // const navigate = useNavigate();
     const [userFormData, setUserFormData] = useState({ name: '', email: '', phone: '' });
     // Thêm state cho form tạo Sân mới
@@ -109,7 +110,7 @@ function Admin() {
             <button
                 onClick={() => {
                     localStorage.removeItem('admin_token'); // Vứt chìa khóa đi
-                    window.location.href = '/login'; // Đẩy về trang đăng nhập
+                    navigate('/login');// Đẩy về trang đăng nhập
                 }}
                 style={{ padding: '10px 20px', backgroundColor: '#7f8c8d', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
             >

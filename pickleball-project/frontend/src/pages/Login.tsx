@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from 'react';
-
+import { useNavigate } from 'react-router-dom';
 function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-
+    const navigate = useNavigate();
     const handleLogin = async (e: FormEvent) => {
         e.preventDefault();
         try {
@@ -20,7 +20,7 @@ function Login() {
                 localStorage.setItem('admin_token', data.token);
 
                 alert("Đăng nhập thành công!");
-                window.location.href = '/admin';
+                navigate('/admin');
             } else {
                 const err = await res.json();
                 alert(err.error);
