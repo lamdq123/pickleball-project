@@ -13,8 +13,8 @@ function Home() {
 
     // Lấy dữ liệu Sân và Khách hàng (để đưa vào ô chọn người đặt)
     useEffect(() => {
-        fetch('http://localhost:3000/api/users').then(r => r.json()).then(setUsers);
-        fetch('http://localhost:3000/api/courts').then(r => r.json()).then(setCourts);
+        fetch('/api/users').then(r => r.json()).then(setUsers);
+        fetch('/api/courts').then(r => r.json()).then(setCourts);
     }, []);
 
     // Hàm xử lý đặt sân đã có tính năng chống trùng lịch
