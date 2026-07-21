@@ -1,29 +1,33 @@
-import express from 'express';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { PrismaClient } from '@prisma/client';
 
-export function createUsersRouter(prisma: any) {
-  const router = express.Router();
+const prisma = new PrismaClient();
 
-  router.get('/', async (_req: any, res: any) => {
-    try {
-      const users = await prisma.user.findMany();
-      res.json(users);
-    } catch (error) {
-      res.status(500).json({ error: 'Có lỗi xảy ra khi lấy dữ liệu' });
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+    const method = req.method;
+
+    // 1. GET: Lấy danh sách người dùng
+    if (method === 'GET') {
+        try {
+            const users = await prisma.user.findMany();
+            return res.status(200).json(users);
+        } catch (error) {
+            return res.status(500).json({ error: 'Có lỗi xảy ra khi lấy dữ liệu người dùng' });
+        }
     }
-  });
 
-  router.post('/', async (req: any, res: any) => {
-    try {
-      const { name, email, phone } = req.body;
-      const newUser = await prisma.user.create({
-        data: { name, email, phone },
-      });
-
-      res.json(newUser);
-    } catch (error) {
-      res.status(500).json({ error: 'Không thể tạo người dùng' });
+    // 2. POST: Tạo người dùng mới
+    if (method === 'POST') {
+        try {
+            const { name, email, phone } = req.body;
+            const newUser = await prisma.user.create({
+                data: { name, email, phone },
+            });
+            return res.status(200).json(newUser);
+        } catch (error) {
+            return res.status(500).json({ error: 'Không thể tạo người dùng' });
+        }
     }
-  });
 
-  return router;
+    return res.status(405).json({ error: 'Method not allowed' });
 }

@@ -1,43 +1,31 @@
-import express from 'express';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { PrismaClient } from '@prisma/client';
 
-export function createCourtsRouter(prisma: any) {
-  const router = express.Router();
+const prisma = new PrismaClient();
 
-  router.get('/', async (_req: any, res: any) => {
-    try {
-      const courts = await prisma.court.findMany();
-      res.json(courts);
-    } catch (error) {
-      res.status(500).json({ error: 'Có lỗi xảy ra khi lấy danh sách sân' });
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+    // Xử lý GET /api/courts
+    if (req.method === 'GET') {
+        try {
+            const courts = await prisma.court.findMany();
+            return res.status(200).json(courts);
+        } catch (error) {
+            return res.status(500).json({ error: 'Có lỗi xảy ra khi lấy danh sách sân' });
+        }
     }
-  });
 
-  router.post('/', async (req: any, res: any) => {
-    try {
-      const { name, location, pricePerHour } = req.body;
-      const newCourt = await prisma.court.create({
-        data: { name, location, pricePerHour },
-      });
-
-      res.json(newCourt);
-    } catch (error) {
-      res.status(500).json({ error: 'Không thể tạo sân mới' });
+    // Xử lý POST /api/courts
+    if (req.method === 'POST') {
+        try {
+            const { name, location, pricePerHour } = req.body;
+            const newCourt = await prisma.court.create({
+                data: { name, location, pricePerHour: Number(pricePerHour) },
+            });
+            return res.status(200).json(newCourt);
+        } catch (error) {
+            return res.status(500).json({ error: 'Không thể tạo sân mới' });
+        }
     }
-  });
 
-  router.delete('/:id', async (req: any, res: any) => {
-    try {
-      const { id } = req.params;
-
-      await prisma.court.delete({
-        where: { id: Number(id) },
-      });
-
-      res.json({ message: 'Xóa sân thành công!' });
-    } catch (error) {
-      res.status(400).json({ error: 'Không thể xóa sân này vì đang có khách đặt lịch. Vui lòng hủy các lịch đặt của sân này trước!' });
-    }
-  });
-
-  return router;
+    res.status(405).json({ error: 'Method not allowed' });
 }
