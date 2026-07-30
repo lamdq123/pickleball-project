@@ -2,9 +2,10 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { PrismaClient } from '@prisma/client';
 import nodemailer from 'nodemailer';
 import { verifyAdmin } from './auth-middleware';
+
 const prisma = new PrismaClient();
 
-// Cấu hình transporter (tương tự như bạn đã làm ở backend cũ)
+// Cấu hình trạm bưu điện gửi mail
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -16,9 +17,12 @@ const transporter = nodemailer.createTransport({
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const method = req.method;
 
-  // 1. GET: Lấy danh sách
+  // ==========================================
+  // 1. GET: Lấy danh sách (Chỉ Admin được xem)
+  // ==========================================
   if (method === 'GET') {
     if (!verifyAdmin(req, res)) return;
+
     try {
       const bookings = await prisma.booking.findMany({
         include: { user: true, court: true },
@@ -29,9 +33,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
-  // 2. POST: Đặt sân
+  // ==========================================
+  // 2. POST: Đặt sân (CỦA KHÁCH -> MỞ CỬA TỰ DO)
+  // ==========================================
   if (method === 'POST') {
-    if (!verifyAdmin(req, res)) return;
+    // ❌ KHÔNG GỌI verifyAdmin Ở ĐÂY NỮA
     try {
       const { userId, courtId, bookDate, timeSlot } = req.body;
 
@@ -48,28 +54,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         include: { user: true, court: true },
       });
 
-      // Gửi email
+      // 📨 GỬI EMAIL TỰ ĐỘNG SAU KHI LƯU DATABASE THÀNH CÔNG
       try {
         await transporter.sendMail({
-          from: `"Pickleball Court Management" <${process.env.EMAIL_USER}>`,
+          from: `"Pickleball Court" <${process.env.EMAIL_USER}>`,
           to: newBooking.user.email,
           subject: '🎾 Xác nhận đặt sân thành công! 🎉',
           html: `
-              <div>
-                <p>Xin chào ${newBooking.user.name || 'khách hàng'},</p>
-                <p>Chúng tôi đã nhận được yêu cầu đặt sân của bạn. Thông tin chi tiết như sau:</p>
+              <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+                <h2 style="color: #27ae60;">Xác nhận lịch đặt sân</h2>
+                <p>Xin chào <strong>${newBooking.user.name || 'khách hàng'}</strong>,</p>
+                <p>Chúng tôi đã ghi nhận lịch đặt sân của bạn thành công. Thông tin chi tiết:</p>
                 <ul>
-                  <li><strong>Sân của bạn là:</strong> ${newBooking.court.name || 'Không xác định'}</li>
-                  <li><strong>Ngày đặt:</strong> ${newBooking.bookDate}</li>
+                  <li><strong>Sân:</strong> ${newBooking.court.name || 'Không xác định'}</li>
+                  <li><strong>Ngày chơi:</strong> ${newBooking.bookDate}</li>
                   <li><strong>Thời gian:</strong> ${newBooking.timeSlot}</li>
                 </ul>
-                <p>Chúc bạn có 1 ngày thật tốt lành và cảm ơn vì đã sử dụng dịch vụ của chúng tôi ❤️.</p>
+                <p style="color: #555;">Chúc bạn có những trận đấu thật tuyệt vời! ❤️</p>
               </div>
             `,
         });
       } catch (emailError) {
-        console.log("Đặt sân thành công nhưng lỗi gửi email:", emailError);
-        // Không return error ở đây, cứ cho đi tiếp để trả về 200 OK
+        console.log("Đặt sân ok nhưng gửi email lỗi:", emailError);
       }
 
       return res.status(200).json(newBooking);
@@ -78,9 +84,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
-  // 3. DELETE: Hủy sân
+  // ==========================================
+  // 3. DELETE: Hủy sân (CỦA ADMIN -> BẮT BUỘC TRÌNH VÉ)
+  // ==========================================
   if (method === 'DELETE') {
-    // Lưu ý: Lấy ID từ URL trên Vercel hơi khác, nếu bạn dùng /api/bookings?id=123
+    // ✅ BẬT LẠI TRẠM GÁC Ở ĐÂY
+    if (!verifyAdmin(req, res)) return;
+
     const id = req.query.id as string;
     try {
       await prisma.booking.delete({ where: { id: Number(id) } });
