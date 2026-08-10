@@ -18,7 +18,7 @@ function Home() {
     const [showQR, setShowQR] = useState(false);
     const [qrUrl, setQrUrl] = useState('');
     const [bookingPayload, setBookingPayload] = useState<any>(null);
-    
+
     const TIME_SLOTS = ['05:00 - 06:00', '06:00 - 07:00', '17:00 - 18:00', '18:00 - 19:00', '19:00 - 20:00'];
 
     useEffect(() => {
@@ -55,7 +55,7 @@ function Home() {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(authForm)
         });
         const data = await res.json();
-        
+
         if (res.ok) {
             if (authMode === 'register') {
                 alert('Đăng ký thành công! Vui lòng đăng nhập.');
@@ -99,7 +99,7 @@ function Home() {
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-800 pb-20">
-            
+
             {/* TASK 1: REFACTOR NAVBAR */}
             <nav className="flex justify-between items-center px-6 md:px-10 py-4 bg-slate-900 text-white shadow-lg sticky top-0 z-40">
                 <h2 className="text-2xl font-bold tracking-tight">🎾 Pickleball Club</h2>
@@ -128,7 +128,7 @@ function Home() {
 
             <div className="max-w-6xl mx-auto px-4 mt-10">
                 {!currentUser ? (
-                    
+
                     /* TASK 3: REFACTOR AUTH CARD */
                     <div className="flex justify-center mt-10">
                         <div className="bg-white p-8 md:p-10 rounded-2xl shadow-2xl w-full max-w-md mx-auto border border-slate-100 transform transition-all">
@@ -136,22 +136,22 @@ function Home() {
                                 {authMode === 'login' ? 'Đăng nhập' : 'Tạo tài khoản'}
                             </h2>
                             <p className="text-center text-slate-500 mb-8">Vui lòng điền thông tin của bạn</p>
-                            
+
                             <form onSubmit={handleAuth} className="flex flex-col gap-5">
                                 {authMode === 'register' && (
                                     <>
-                                        <input type="text" placeholder="Họ và Tên" required value={authForm.name} onChange={e => setAuthForm({...authForm, name: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
-                                        <input type="text" placeholder="Số điện thoại" required value={authForm.phone} onChange={e => setAuthForm({...authForm, phone: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
+                                        <input type="text" placeholder="Họ và Tên" required value={authForm.name} onChange={e => setAuthForm({ ...authForm, name: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
+                                        <input type="text" placeholder="Số điện thoại" required value={authForm.phone} onChange={e => setAuthForm({ ...authForm, phone: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
                                     </>
                                 )}
-                                <input type="email" placeholder="Email của bạn" required value={authForm.email} onChange={e => setAuthForm({...authForm, email: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
-                                <input type="password" placeholder="Mật khẩu" required value={authForm.password} onChange={e => setAuthForm({...authForm, password: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
-                                
+                                <input type="email" placeholder="Email của bạn" required value={authForm.email} onChange={e => setAuthForm({ ...authForm, email: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
+                                <input type="password" placeholder="Mật khẩu" required value={authForm.password} onChange={e => setAuthForm({ ...authForm, password: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
+
                                 <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors shadow-md shadow-blue-500/30 mt-2">
                                     {authMode === 'login' ? 'ĐĂNG NHẬP' : 'TẠO TÀI KHOẢN'}
                                 </button>
                             </form>
-                            
+
                             <p className="text-center mt-6 text-sm text-slate-600">
                                 {authMode === 'login' ? 'Chưa có tài khoản? ' : 'Đã có tài khoản? '}
                                 <button onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')} className="text-blue-600 font-bold hover:underline">
@@ -165,7 +165,7 @@ function Home() {
                         <div className="flex items-center gap-3 mb-6">
                             <h2 className="text-2xl font-bold text-slate-800 border-l-4 border-blue-600 pl-3">Danh sách sân hôm nay</h2>
                         </div>
-                        
+
                         {/* TASK 4: REFACTOR COURT CARDS */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
                             {courts.map(court => (
@@ -224,7 +224,7 @@ function Home() {
                         <div className="flex items-center gap-3 mb-6 mt-8">
                             <h2 className="text-2xl font-bold text-slate-800 border-l-4 border-slate-600 pl-3">Lịch sử đặt sân</h2>
                         </div>
-                        
+
                         {/* TASK 6: REFACTOR HISTORY TABLE */}
                         {history.length === 0 ? (
                             <div className="bg-white p-8 rounded-2xl text-center border border-dashed border-slate-300">
@@ -273,11 +273,11 @@ function Home() {
                     <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm text-center transform transition-all scale-100">
                         <h3 className="text-2xl font-bold text-slate-800 mb-2">Quét mã thanh toán</h3>
                         <p className="text-slate-500 text-sm mb-6">Sử dụng App ngân hàng hoặc Momo để quét</p>
-                        
+
                         <div className="border border-slate-200 p-3 rounded-xl inline-block mb-6 bg-slate-50 shadow-inner">
                             <img src={qrUrl} alt="QR Code" className="w-56 h-56 object-contain rounded-lg" />
                         </div>
-                        
+
                         <div className="flex flex-col gap-3">
                             <button onClick={handleConfirmPayment} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg transition-colors shadow-md shadow-emerald-600/30">
                                 ✅ TÔI ĐÃ CHUYỂN KHOẢN
