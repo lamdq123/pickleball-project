@@ -1,82 +1,75 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-// 👉 IMPORT CÁC COMPONENT BIỂU ĐỒ TỪ RECHARTS
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import {
+    LayoutDashboard, MapPin, CalendarCheck, Users, LogOut, Plus, Trash2, XCircle,
+    DollarSign, TicketCheck, UserPlus, TrendingUp, Loader2,
+} from 'lucide-react';
 
 interface User { id: number; name: string; email: string; phone: string | null; }
 interface Court { id: number; name: string; location: string; pricePerHour: number; }
 interface Booking { id: number; user: User; court: Court; bookDate: string; timeSlot: string; }
+
+type Section = 'overview' | 'courts' | 'bookings' | 'users';
 
 function Admin() {
     const [users, setUsers] = useState<User[]>([]);
     const [courts, setCourts] = useState<Court[]>([]);
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
+    const [section, setSection] = useState<Section>('overview');
     const navigate = useNavigate();
 
     const [userFormData, setUserFormData] = useState({ name: '', email: '', phone: '' });
     const [courtFormData, setCourtFormData] = useState({ name: '', location: '', pricePerHour: '' });
 
     const token = localStorage.getItem('admin_token');
-    const authHeaders = { 'Authorization': `Bearer ${token}` };
+    const authHeaders = { Authorization: `Bearer ${token}` };
 
-    const fetchUsers = () => fetch('/api/users', { headers: authHeaders }).then(r => r.json()).then(setUsers);
-    const fetchCourts = () => fetch('/api/courts', { headers: authHeaders }).then(r => r.json()).then(setCourts);
-    const fetchBookings = () => fetch('/api/bookings', { headers: authHeaders }).then(r => r.json()).then(setBookings);
+    const safeArray = <T,>(setter: (v: T[]) => void) => (r: Response) =>
+        r.ok ? r.json().then((d) => setter(Array.isArray(d) ? d : [])) : setter([]);
+
+    const fetchUsers = () => fetch('/api/users', { headers: authHeaders }).then(safeArray(setUsers)).catch(() => setUsers([]));
+    const fetchCourts = () => fetch('/api/courts', { headers: authHeaders }).then(safeArray(setCourts)).catch(() => setCourts([]));
+    const fetchBookings = () => fetch('/api/bookings', { headers: authHeaders }).then(safeArray(setBookings)).catch(() => setBookings([]));
 
     useEffect(() => {
-        Promise.all([fetchUsers(), fetchCourts(), fetchBookings()]).then(() => setLoading(false));
+        Promise.all([fetchUsers(), fetchCourts(), fetchBookings()]).finally(() => setLoading(false));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // ==========================================
-    // 📊 LOGIC XỬ LÝ DỮ LIỆU ĐỂ VẼ BIỂU ĐỒ (CHẾ BIẾN DATA)
-    // ==========================================
-
-    // 1. Chế biến dữ liệu doanh thu theo ngày (Cho Biểu đồ Cột)
+    // ===== Data prep for charts =====
     const getRevenueByDate = () => {
         const revenueMap: { [key: string]: number } = {};
-        bookings.forEach(b => {
-            const date = b.bookDate;
+        bookings.forEach((b) => {
             const price = b.court?.pricePerHour || 0;
-            revenueMap[date] = (revenueMap[date] || 0) + price;
+            revenueMap[b.bookDate] = (revenueMap[b.bookDate] || 0) + price;
         });
-        // Chuyển sang mảng Object: [{ date: '2026-07-10', doanhThu: 150000 }]
-        return Object.keys(revenueMap).sort().map(date => ({
-            date: date,
-            'Doanh Thu (đ)': revenueMap[date]
-        }));
+        return Object.keys(revenueMap).sort().map((date) => ({ date, 'Doanh Thu (đ)': revenueMap[date] }));
     };
 
-    // 2. Chế biến dữ liệu tỷ lệ doanh thu theo sân (Cho Biểu đồ Tròn)
     const getRevenueByCourt = () => {
         const courtMap: { [key: string]: number } = {};
-        bookings.forEach(b => {
+        bookings.forEach((b) => {
             const courtName = b.court?.name || 'Sân ẩn';
-            const price = b.court?.pricePerHour || 0;
-            courtMap[courtName] = (courtMap[courtName] || 0) + price;
+            courtMap[courtName] = (courtMap[courtName] || 0) + (b.court?.pricePerHour || 0);
         });
-        // Chuyển sang mảng Object: [{ name: 'Sân A', value: 300000 }]
-        return Object.keys(courtMap).map(name => ({
-            name: name,
-            value: courtMap[name]
-        }));
+        return Object.keys(courtMap).map((name) => ({ name, value: courtMap[name] }));
     };
 
     const dailyRevenueData = getRevenueByDate();
     const courtRevenueData = getRevenueByCourt();
+    const COLORS = ['#2563eb', '#0ea5e9', '#f59e0b', '#10b981', '#8b5cf6'];
 
-    // Bảng màu cho biểu đồ tròn
-    const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF'];
+    const totalRevenue = bookings.reduce((sum, b) => sum + (b.court?.pricePerHour || 0), 0);
 
-    // ==========================================
-    // CÁC HÀM THAO TÁC CRUD (GIỮ NGUYÊN HOÀN HẢO CỦA EM)
-    // ==========================================
+    // ===== CRUD =====
     const handleRegisterUser = async (e: FormEvent) => {
         e.preventDefault();
         const res = await fetch('/api/users', {
             method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders }, body: JSON.stringify(userFormData),
         });
-        if (res.ok) { alert("Thêm thành viên thành công!"); setUserFormData({ name: '', email: '', phone: '' }); fetchUsers(); }
+        if (res.ok) { setUserFormData({ name: '', email: '', phone: '' }); fetchUsers(); }
     };
 
     const handleCreateCourt = async (e: FormEvent) => {
@@ -85,164 +78,329 @@ function Admin() {
             method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders },
             body: JSON.stringify({ name: courtFormData.name, location: courtFormData.location, pricePerHour: Number(courtFormData.pricePerHour) }),
         });
-        if (res.ok) { alert("Thêm sân mới thành công!"); setCourtFormData({ name: '', location: '', pricePerHour: '' }); fetchCourts(); }
+        if (res.ok) { setCourtFormData({ name: '', location: '', pricePerHour: '' }); fetchCourts(); }
     };
 
     const handleDeleteCourt = async (id: number) => {
-        if (!window.confirm("Bạn có chắc chắn muốn xóa sân này không?")) return;
+        if (!window.confirm('Bạn có chắc chắn muốn xóa sân này không?')) return;
         const res = await fetch(`/api/courts?id=${id}`, { method: 'DELETE', headers: authHeaders });
-        if (res.ok) { alert("Đã xóa sân thành công!"); fetchCourts(); } else { const err = await res.json(); alert(err.error); }
+        if (res.ok) fetchCourts(); else alert((await res.json()).error);
     };
 
     const handleCancelBooking = async (id: number) => {
-        if (!window.confirm("Hủy lịch đặt này?")) return;
+        if (!window.confirm('Hủy lịch đặt này?')) return;
         const res = await fetch(`/api/bookings?id=${id}`, { method: 'DELETE', headers: authHeaders });
-        if (res.ok) { alert("Đã hủy lịch thành công!"); fetchBookings(); }
+        if (res.ok) fetchBookings();
     };
 
+    const navItems: { key: Section; label: string; icon: typeof LayoutDashboard }[] = [
+        { key: 'overview', label: 'Tổng quan', icon: LayoutDashboard },
+        { key: 'courts', label: 'Quản lý sân', icon: MapPin },
+        { key: 'bookings', label: 'Lịch đặt', icon: CalendarCheck },
+        { key: 'users', label: 'Thành viên', icon: Users },
+    ];
+
+    const currency = (n: number) => `${n.toLocaleString('vi-VN')} đ`;
+
     return (
-        <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h1 style={{ color: '#d35400' }}>🛠️ Bảng Điều Khiển Quản Trị (Admin)</h1>
-                <button
-                    onClick={() => { localStorage.removeItem('admin_token'); navigate('/login'); }}
-                    style={{ padding: '10px 20px', backgroundColor: '#7f8c8d', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}
-                >
-                    Đăng xuất
-                </button>
-            </div>
+        <div className="min-h-screen bg-slate-100 font-sans text-slate-800 flex">
+            {/* ===== SIDEBAR ===== */}
+            <aside className="hidden md:flex flex-col w-64 bg-slate-900 text-slate-300 fixed inset-y-0 left-0 z-30">
+                <div className="px-6 py-6 border-b border-slate-800">
+                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                        <span className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white">🎾</span>
+                        Admin Panel
+                    </h2>
+                </div>
+                <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
+                    {navItems.map(({ key, label, icon: Icon }) => (
+                        <button
+                            key={key}
+                            onClick={() => setSection(key)}
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
+                                section === key ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'hover:bg-slate-800 hover:text-white'
+                            }`}
+                        >
+                            <Icon className="w-5 h-5" />
+                            {label}
+                        </button>
+                    ))}
+                </nav>
+                <div className="px-3 py-4 border-t border-slate-800">
+                    <button
+                        onClick={() => { localStorage.removeItem('admin_token'); navigate('/login'); }}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
+                    >
+                        <LogOut className="w-5 h-5" />
+                        Đăng xuất
+                    </button>
+                </div>
+            </aside>
 
-            {/* ==========================================
-                📊 KHU VỰC BIỂU ĐỒ BÁO CÁO DOANH THU (NEW ACCENT)
-                ========================================== */}
-            <h2 style={{ color: '#2c3e50', marginTop: '30px' }}>📈 Thống kê báo cáo doanh thu</h2>
-            <div style={{ display: 'flex', gap: '20px', marginBottom: '40px', flexWrap: 'wrap' }}>
-
-                {/* 1. Biểu đồ cột: Tăng trưởng doanh thu theo ngày */}
-                <div style={{ flex: 1, minWidth: '450px', backgroundColor: '#ffffff', padding: '20px', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', border: '1px solid #ddd' }}>
-                    <h4 style={{ textAlign: 'center', margin: '0 0 15px 0', color: '#34495e' }}>Doanh thu theo ngày</h4>
-                    <div style={{ width: '100%', height: 300 }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={dailyRevenueData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="date" />
-                                <YAxis />
-                                <Tooltip formatter={(value) => `${Number(value).toLocaleString('vi-VN')} đ`} />
-                                <Legend />
-                                <Bar dataKey="Doanh Thu (đ)" fill="#2ecc71" barSize={40} radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
+            {/* ===== MAIN ===== */}
+            <div className="flex-1 md:ml-64">
+                {/* Topbar (mobile nav + header) */}
+                <header className="bg-white border-b border-slate-200 sticky top-0 z-20">
+                    <div className="px-4 md:px-8 py-4 flex items-center justify-between">
+                        <div>
+                            <h1 className="text-xl font-bold text-slate-800">{navItems.find((n) => n.key === section)?.label}</h1>
+                            <p className="text-sm text-slate-500 hidden sm:block">Bảng điều khiển quản trị hệ thống đặt sân</p>
+                        </div>
+                        <button
+                            onClick={() => { localStorage.removeItem('admin_token'); navigate('/login'); }}
+                            className="md:hidden flex items-center gap-2 px-3 py-2 text-sm font-medium bg-slate-100 rounded-lg text-slate-700"
+                        >
+                            <LogOut className="w-4 h-4" /> Thoát
+                        </button>
                     </div>
-                </div>
-
-                {/* 2. Biểu đồ tròn: Tỷ trọng doanh thu giữa các Sân */}
-                <div style={{ flex: 1, minWidth: '350px', backgroundColor: '#ffffff', padding: '20px', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', border: '1px solid #ddd', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <h4 style={{ textAlign: 'center', margin: '0 0 15px 0', color: '#34495e' }}>Tỷ trọng doanh thu theo Sân</h4>
-                    <div style={{ width: '100%', height: 260 }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={courtRevenueData}
-                                    cx="50%"
-                                    cy="50%"
-                                    labelLine={false}
-                                    label={({ name, percent = 0 }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                                    outerRadius={80}
-                                    fill="#8884d8"
-                                    dataKey="value"
-                                >
-                                    {courtRevenueData.map((_entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip formatter={(value) => `${Number(value).toLocaleString('vi-VN')} đ`} />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-
-            </div>
-
-            <hr style={{ border: '1px solid #eee', marginBottom: '30px' }} />
-
-            {/* ================= PHẦN QUẢN LÝ SÂN PICKLEBALL ================= */}
-            <h2 style={{ color: '#27ae60' }}>1. Quản lý Cơ sở vật chất (Sân)</h2>
-            <div style={{ display: 'flex', gap: '30px', marginBottom: '40px' }}>
-                <div style={{ flex: 1, backgroundColor: '#eafaf1', padding: '20px', borderRadius: '8px', height: 'fit-content' }}>
-                    <h3>Thêm sân mới</h3>
-                    <form onSubmit={handleCreateCourt} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        <input type="text" placeholder="Tên sân" required value={courtFormData.name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCourtFormData({ ...courtFormData, name: e.target.value })} style={{ padding: '8px' }} />
-                        <input type="text" placeholder="Vị trí" required value={courtFormData.location} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCourtFormData({ ...courtFormData, location: e.target.value })} style={{ padding: '8px' }} />
-                        <input type="number" placeholder="Giá tiền/Giờ" required value={courtFormData.pricePerHour} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCourtFormData({ ...courtFormData, pricePerHour: e.target.value })} style={{ padding: '8px' }} />
-                        <button type="submit" style={{ padding: '10px', backgroundColor: '#27ae60', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '4px', fontWeight: 'bold' }}>Tạo Sân Mới</button>
-                    </form>
-                </div>
-                <div style={{ flex: 2 }}>
-                    <table border={1} cellPadding={10} style={{ borderCollapse: 'collapse', width: '100%' }}>
-                        <thead>
-                            <tr style={{ backgroundColor: '#27ae60', color: 'white' }}><th>Mã Sân</th><th>Tên Sân</th><th>Vị Trí</th><th>Giá/Giờ</th><th>Thao tác</th></tr>
-                        </thead>
-                        <tbody>
-                            {courts.map((court) => (
-                                <tr key={court.id}>
-                                    <td style={{ textAlign: 'center' }}>{court.id}</td><td>{court.name}</td><td>{court.location}</td>
-                                    <td>{court.pricePerHour.toLocaleString('vi-VN')} đ</td>
-                                    <td style={{ textAlign: 'center' }}>
-                                        <button onClick={() => handleDeleteCourt(court.id)} style={{ backgroundColor: '#e74c3c', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '3px', cursor: 'pointer' }}>Xóa</button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {/* ================= PHẦN QUẢN LÝ LỊCH ĐẶT ================= */}
-            <h2 style={{ color: '#2c3e50' }}>2. Lịch đặt sân hiện tại</h2>
-            {loading ? <p>Đang tải...</p> : bookings.length === 0 ? <p>Chưa có lịch đặt nào.</p> : (
-                <table border={1} cellPadding={10} style={{ borderCollapse: 'collapse', width: '100%', marginBottom: '40px' }}>
-                    <thead>
-                        <tr style={{ backgroundColor: '#f2f2f2' }}><th>Mã Booking</th><th>Khách hàng</th><th>Sân</th><th>Ngày chơi</th><th>Khung giờ</th><th>Thao tác</th></tr>
-                    </thead>
-                    <tbody>
-                        {bookings.map((b) => (
-                            <tr key={b.id}>
-                                <td style={{ textAlign: 'center' }}>#{b.id}</td>
-                                <td><strong>{b.user?.name}</strong></td><td>{b.court?.name}</td><td>{b.bookDate}</td><td>{b.timeSlot}</td>
-                                <td style={{ textAlign: 'center' }}>
-                                    <button onClick={() => handleCancelBooking(b.id)} style={{ backgroundColor: '#e74c3c', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '3px', cursor: 'pointer' }}>Hủy lịch</button>
-                                </td>
-                            </tr>
+                    {/* Mobile section tabs */}
+                    <div className="md:hidden flex overflow-x-auto gap-1 px-4 pb-3">
+                        {navItems.map(({ key, label, icon: Icon }) => (
+                            <button
+                                key={key}
+                                onClick={() => setSection(key)}
+                                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap ${
+                                    section === key ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'
+                                }`}
+                            >
+                                <Icon className="w-4 h-4" /> {label}
+                            </button>
                         ))}
-                    </tbody>
-                </table>
-            )}
+                    </div>
+                </header>
 
-            {/* ================= PHẦN QUẢN LÝ THÀNH VIÊN ================= */}
-            <h2 style={{ color: '#2c3e50' }}>3. Quản lý thành viên</h2>
-            <div style={{ display: 'flex', gap: '30px' }}>
-                <div style={{ flex: 1, backgroundColor: '#f9f9f9', padding: '20px', borderRadius: '8px', height: 'fit-content' }}>
-                    <h3>Thêm thành viên</h3>
-                    <form onSubmit={handleRegisterUser} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        <input type="text" placeholder="Họ và tên" required value={userFormData.name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUserFormData({ ...userFormData, name: e.target.value })} style={{ padding: '8px' }} />
-                        <input type="email" placeholder="Email" required value={userFormData.email} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUserFormData({ ...userFormData, email: e.target.value })} style={{ padding: '8px' }} />
-                        <input type="text" placeholder="Số điện thoại" value={userFormData.phone} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUserFormData({ ...userFormData, phone: e.target.value })} style={{ padding: '8px' }} />
-                        <button type="submit" style={{ padding: '10px', backgroundColor: '#3498db', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '4px', fontWeight: 'bold' }}>Đăng ký</button>
-                    </form>
-                </div>
-                <div style={{ flex: 2 }}>
-                    <table border={1} cellPadding={10} style={{ borderCollapse: 'collapse', width: '100%' }}>
-                        <thead>
-                            <tr style={{ backgroundColor: '#f2f2f2' }}><th>ID</th><th>Họ Tên</th><th>Email</th><th>SĐT</th></tr>
-                        </thead>
-                        <tbody>
-                            {users.map((user) => (
-                                <tr key={user.id}><td>{user.id}</td><td>{user.name}</td><td>{user.email}</td><td>{user.phone || 'Chưa cập nhật'}</td></tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                <main className="p-4 md:p-8">
+                    {loading ? (
+                        <div className="flex items-center justify-center py-32 text-slate-500">
+                            <Loader2 className="w-6 h-6 animate-spin mr-2" /> Đang tải dữ liệu...
+                        </div>
+                    ) : (
+                        <>
+                            {/* ===== OVERVIEW ===== */}
+                            {section === 'overview' && (
+                                <div className="flex flex-col gap-8">
+                                    {/* Stat cards */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                                        <StatCard icon={DollarSign} label="Tổng doanh thu" value={currency(totalRevenue)} accent="bg-blue-600" />
+                                        <StatCard icon={TicketCheck} label="Số lượt đặt sân" value={`${bookings.length}`} accent="bg-emerald-500" />
+                                        <StatCard icon={UserPlus} label="Khách hàng" value={`${users.length}`} accent="bg-amber-500" />
+                                    </div>
+
+                                    {/* Charts */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+                                        <div className="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                                            <h4 className="font-bold text-slate-800 mb-1">Doanh thu theo ngày</h4>
+                                            <p className="text-sm text-slate-500 mb-4">Tăng trưởng doanh thu theo từng ngày đặt sân</p>
+                                            <div className="w-full h-72">
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <BarChart data={dailyRevenueData}>
+                                                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                                                        <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#64748b' }} />
+                                                        <YAxis tick={{ fontSize: 12, fill: '#64748b' }} width={40} />
+                                                        <Tooltip formatter={(v) => currency(Number(v))} cursor={{ fill: '#f1f5f9' }} />
+                                                        <Bar dataKey="Doanh Thu (đ)" fill="#2563eb" barSize={38} radius={[6, 6, 0, 0]} />
+                                                    </BarChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                        </div>
+                                        <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                                            <h4 className="font-bold text-slate-800 mb-1">Tỷ trọng theo sân</h4>
+                                            <p className="text-sm text-slate-500 mb-4">Phân bổ doanh thu giữa các sân</p>
+                                            <div className="w-full h-72">
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <PieChart>
+                                                        <Pie
+                                                            data={courtRevenueData}
+                                                            cx="50%" cy="50%" labelLine={false}
+                                                            label={({ name, percent = 0 }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                                                            outerRadius={90} dataKey="value"
+                                                        >
+                                                            {courtRevenueData.map((_e, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                                                        </Pie>
+                                                        <Tooltip formatter={(v) => currency(Number(v))} />
+                                                    </PieChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ===== COURTS ===== */}
+                            {section === 'courts' && (
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                    {/* Add court form */}
+                                    <div className="lg:col-span-1">
+                                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sticky top-28">
+                                            <h3 className="font-bold text-slate-800 flex items-center gap-2 mb-5">
+                                                <Plus className="w-5 h-5 text-blue-600" /> Thêm Sân Mới
+                                            </h3>
+                                            <form onSubmit={handleCreateCourt} className="flex flex-col gap-4">
+                                                <Field label="Tên sân">
+                                                    <input type="text" required value={courtFormData.name} placeholder="Sân số 1"
+                                                        onChange={(e) => setCourtFormData({ ...courtFormData, name: e.target.value })} className={inputCls} />
+                                                </Field>
+                                                <Field label="Vị trí">
+                                                    <input type="text" required value={courtFormData.location} placeholder="Quận 1, TP.HCM"
+                                                        onChange={(e) => setCourtFormData({ ...courtFormData, location: e.target.value })} className={inputCls} />
+                                                </Field>
+                                                <Field label="Giá tiền / giờ">
+                                                    <input type="number" required value={courtFormData.pricePerHour} placeholder="150000"
+                                                        onChange={(e) => setCourtFormData({ ...courtFormData, pricePerHour: e.target.value })} className={inputCls} />
+                                                </Field>
+                                                <button type="submit" className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-blue-500/30">
+                                                    <Plus className="w-5 h-5" /> Tạo Sân Mới
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                    {/* Court grid */}
+                                    <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                        {courts.map((court) => (
+                                            <div key={court.id} className="bg-white rounded-2xl shadow-sm border-t-4 border-blue-500 border-x border-b border-slate-200 p-5 hover:shadow-lg transition-shadow">
+                                                <div className="flex items-start justify-between">
+                                                    <div>
+                                                        <h3 className="font-bold text-slate-800 text-lg">{court.name}</h3>
+                                                        <p className="text-sm text-slate-500 flex items-center gap-1.5 mt-1">
+                                                            <MapPin className="w-4 h-4 text-slate-400" /> {court.location}
+                                                        </p>
+                                                    </div>
+                                                    <button onClick={() => handleDeleteCourt(court.id)} title="Xóa sân"
+                                                        className="p-2 rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors">
+                                                        <Trash2 className="w-5 h-5" />
+                                                    </button>
+                                                </div>
+                                                <p className="text-amber-600 font-extrabold text-lg mt-4">{currency(court.pricePerHour)}<span className="text-sm font-medium text-slate-400">/giờ</span></p>
+                                            </div>
+                                        ))}
+                                        {courts.length === 0 && <EmptyState label="Chưa có sân nào." />}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ===== BOOKINGS ===== */}
+                            {section === 'bookings' && (
+                                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                                    {bookings.length === 0 ? <EmptyState label="Chưa có lịch đặt nào." /> : (
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left text-sm">
+                                                <thead className="bg-slate-50 text-slate-500 uppercase text-xs tracking-wider">
+                                                    <tr>
+                                                        <Th>Mã</Th><Th>Khách hàng</Th><Th>Sân</Th><Th>Ngày chơi</Th><Th>Khung giờ</Th><Th className="text-right">Thao tác</Th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-100">
+                                                    {bookings.map((b) => (
+                                                        <tr key={b.id} className="hover:bg-slate-50 transition-colors">
+                                                            <td className="px-6 py-4 font-bold text-slate-700">#{b.id}</td>
+                                                            <td className="px-6 py-4 font-medium text-slate-900">{b.user?.name}</td>
+                                                            <td className="px-6 py-4 text-slate-600">{b.court?.name}</td>
+                                                            <td className="px-6 py-4 text-slate-600">{b.bookDate}</td>
+                                                            <td className="px-6 py-4 font-semibold text-blue-600">{b.timeSlot}</td>
+                                                            <td className="px-6 py-4 text-right">
+                                                                <button onClick={() => handleCancelBooking(b.id)}
+                                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-colors">
+                                                                    <XCircle className="w-4 h-4" /> Hủy lịch
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* ===== USERS ===== */}
+                            {section === 'users' && (
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                    <div className="lg:col-span-1">
+                                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sticky top-28">
+                                            <h3 className="font-bold text-slate-800 flex items-center gap-2 mb-5">
+                                                <UserPlus className="w-5 h-5 text-blue-600" /> Thêm thành viên
+                                            </h3>
+                                            <form onSubmit={handleRegisterUser} className="flex flex-col gap-4">
+                                                <Field label="Họ và tên">
+                                                    <input type="text" required value={userFormData.name} placeholder="Nguyễn Văn A"
+                                                        onChange={(e) => setUserFormData({ ...userFormData, name: e.target.value })} className={inputCls} />
+                                                </Field>
+                                                <Field label="Email">
+                                                    <input type="email" required value={userFormData.email} placeholder="email@example.com"
+                                                        onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })} className={inputCls} />
+                                                </Field>
+                                                <Field label="Số điện thoại">
+                                                    <input type="text" value={userFormData.phone} placeholder="0987 654 321"
+                                                        onChange={(e) => setUserFormData({ ...userFormData, phone: e.target.value })} className={inputCls} />
+                                                </Field>
+                                                <button type="submit" className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-blue-500/30">
+                                                    <UserPlus className="w-5 h-5" /> Đăng ký
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                    <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                                        {users.length === 0 ? <EmptyState label="Chưa có thành viên nào." /> : (
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-left text-sm">
+                                                    <thead className="bg-slate-50 text-slate-500 uppercase text-xs tracking-wider">
+                                                        <tr><Th>ID</Th><Th>Họ tên</Th><Th>Email</Th><Th>SĐT</Th></tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-slate-100">
+                                                        {users.map((u) => (
+                                                            <tr key={u.id} className="hover:bg-slate-50 transition-colors">
+                                                                <td className="px-6 py-4 font-bold text-slate-700">{u.id}</td>
+                                                                <td className="px-6 py-4 font-medium text-slate-900">{u.name}</td>
+                                                                <td className="px-6 py-4 text-slate-600">{u.email}</td>
+                                                                <td className="px-6 py-4 text-slate-600">{u.phone || 'Chưa cập nhật'}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </main>
             </div>
+        </div>
+    );
+}
+
+const inputCls =
+    'w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all';
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+    return (
+        <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-semibold text-slate-700">{label}</label>
+            {children}
+        </div>
+    );
+}
+
+function Th({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+    return <th className={`px-6 py-3.5 font-semibold ${className}`}>{children}</th>;
+}
+
+function EmptyState({ label }: { label: string }) {
+    return <div className="p-10 text-center text-slate-400 text-sm w-full">{label}</div>;
+}
+
+function StatCard({ icon: Icon, label, value, accent }: { icon: typeof DollarSign; label: string; value: string; accent: string }) {
+    return (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-xl ${accent} flex items-center justify-center text-white shrink-0`}>
+                <Icon className="w-6 h-6" />
+            </div>
+            <div className="min-w-0">
+                <p className="text-sm text-slate-500">{label}</p>
+                <p className="text-xl font-extrabold text-slate-800 truncate">{value}</p>
+            </div>
+            <TrendingUp className="w-5 h-5 text-emerald-500 ml-auto shrink-0" />
         </div>
     );
 }
