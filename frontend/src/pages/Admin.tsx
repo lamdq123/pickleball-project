@@ -1,406 +1,373 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import {
-    LayoutDashboard, MapPin, CalendarCheck, Users, LogOut, Plus, Trash2, XCircle,
-    DollarSign, TicketCheck, UserPlus, TrendingUp, Loader2,
-} from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
-interface User { id: number; name: string; email: string; phone: string | null; }
-interface Court { id: number; name: string; location: string; pricePerHour: number; }
-interface Booking { id: number; user: User; court: Court; bookDate: string; timeSlot: string; }
-
-type Section = 'overview' | 'courts' | 'bookings' | 'users';
+interface Court { id: number; name: string; location: string; pricePerHour: number; imageUrl?: string; }
+interface User { id: number; name: string; email: string; phone: string; }
+interface Booking { id: number; court: Court; user: User; bookDate: string; timeSlot: string; }
 
 function Admin() {
-    const [users, setUsers] = useState<User[]>([]);
-    const [courts, setCourts] = useState<Court[]>([]);
-    const [bookings, setBookings] = useState<Booking[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [section, setSection] = useState<Section>('overview');
     const navigate = useNavigate();
+    const [courts, setCourts] = useState<Court[]>([]);
+    const [users, setUsers] = useState<User[]>([]);
+    const [bookings, setBookings] = useState<Booking[]>([]);
 
-    const [userFormData, setUserFormData] = useState({ name: '', email: '', phone: '' });
     const [courtFormData, setCourtFormData] = useState({ name: '', location: '', pricePerHour: '' });
+    const [userFormData, setUserFormData] = useState({ name: '', email: '', phone: '', password: '' });
 
-    const token = localStorage.getItem('admin_token');
-    const authHeaders = { Authorization: `Bearer ${token}` };
-
-    const safeArray = <T,>(setter: (v: T[]) => void) => (r: Response) =>
-        r.ok ? r.json().then((d) => setter(Array.isArray(d) ? d : [])) : setter([]);
-
-    const fetchUsers = () => fetch('/api/users', { headers: authHeaders }).then(safeArray(setUsers)).catch(() => setUsers([]));
-    const fetchCourts = () => fetch('/api/courts', { headers: authHeaders }).then(safeArray(setCourts)).catch(() => setCourts([]));
-    const fetchBookings = () => fetch('/api/bookings', { headers: authHeaders }).then(safeArray(setBookings)).catch(() => setBookings([]));
+    // State quản lý Tab đang hiển thị
+    const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'courts' | 'users'>('dashboard');
 
     useEffect(() => {
-        Promise.all([fetchUsers(), fetchCourts(), fetchBookings()]).finally(() => setLoading(false));
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+        const token = localStorage.getItem('admin_token');
+        if (!token) {
+            navigate('/login');
+        } else {
+            fetchCourts();
+            fetchUsers();
+            fetchBookings();
+        }
+    }, [navigate]);
 
-    // ===== Data prep for charts =====
-    const getRevenueByDate = () => {
-        const revenueMap: { [key: string]: number } = {};
-        bookings.forEach((b) => {
-            const price = b.court?.pricePerHour || 0;
-            revenueMap[b.bookDate] = (revenueMap[b.bookDate] || 0) + price;
-        });
-        return Object.keys(revenueMap).sort().map((date) => ({ date, 'Doanh Thu (đ)': revenueMap[date] }));
+    const getHeaders = () => ({
+        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`,
+        'Content-Type': 'application/json'
+    });
+
+    const fetchCourts = async () => {
+        const res = await fetch('/api/courts', { headers: getHeaders() });
+        if (res.ok) setCourts(await res.json());
     };
 
-    const getRevenueByCourt = () => {
-        const courtMap: { [key: string]: number } = {};
-        bookings.forEach((b) => {
-            const courtName = b.court?.name || 'Sân ẩn';
-            courtMap[courtName] = (courtMap[courtName] || 0) + (b.court?.pricePerHour || 0);
-        });
-        return Object.keys(courtMap).map((name) => ({ name, value: courtMap[name] }));
+    const fetchUsers = async () => {
+        const res = await fetch('/api/users', { headers: getHeaders() });
+        if (res.ok) setUsers(await res.json());
     };
 
-    const dailyRevenueData = getRevenueByDate();
-    const courtRevenueData = getRevenueByCourt();
-    const COLORS = ['#2563eb', '#0ea5e9', '#f59e0b', '#10b981', '#8b5cf6'];
-
-    const totalRevenue = bookings.reduce((sum, b) => sum + (b.court?.pricePerHour || 0), 0);
-
-    // ===== CRUD =====
-    const handleRegisterUser = async (e: FormEvent) => {
-        e.preventDefault();
-        const res = await fetch('/api/users', {
-            method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders }, body: JSON.stringify(userFormData),
-        });
-        if (res.ok) { setUserFormData({ name: '', email: '', phone: '' }); fetchUsers(); }
+    const fetchBookings = async () => {
+        const res = await fetch('/api/bookings', { headers: getHeaders() });
+        if (res.ok) setBookings(await res.json());
     };
 
+    const handleLogout = () => {
+        localStorage.removeItem('admin_token');
+        navigate('/login');
+    };
+
+    // ==========================================
+    // CÁC HÀM XỬ LÝ (CRUD)
+    // ==========================================
     const handleCreateCourt = async (e: FormEvent) => {
         e.preventDefault();
         const res = await fetch('/api/courts', {
-            method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders },
-            body: JSON.stringify({ name: courtFormData.name, location: courtFormData.location, pricePerHour: Number(courtFormData.pricePerHour) }),
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ ...courtFormData, pricePerHour: Number(courtFormData.pricePerHour) }),
         });
-        if (res.ok) { setCourtFormData({ name: '', location: '', pricePerHour: '' }); fetchCourts(); }
+        if (res.ok) {
+            alert("Thêm sân mới thành công!");
+            setCourtFormData({ name: '', location: '', pricePerHour: '' });
+            fetchCourts();
+        }
     };
 
     const handleDeleteCourt = async (id: number) => {
-        if (!window.confirm('Bạn có chắc chắn muốn xóa sân này không?')) return;
-        const res = await fetch(`/api/courts?id=${id}`, { method: 'DELETE', headers: authHeaders });
-        if (res.ok) fetchCourts(); else alert((await res.json()).error);
+        if (!window.confirm("Xóa sân này? Hệ thống sẽ báo lỗi nếu sân đang có lịch đặt.")) return;
+        const res = await fetch(`/api/courts?id=${id}`, { method: 'DELETE', headers: getHeaders() });
+        if (res.ok) fetchCourts();
+        else alert((await res.json()).error);
+    };
+
+    const handleRegisterUser = async (e: FormEvent) => {
+        e.preventDefault();
+        const res = await fetch('/api/users', {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(userFormData)
+        });
+        if (res.ok) {
+            alert("Đã thêm thành viên!");
+            setUserFormData({ name: '', email: '', phone: '', password: '' });
+            fetchUsers();
+        } else alert((await res.json()).error);
+    };
+
+    const handleDeleteUser = async (id: number) => {
+        if (!window.confirm("Bạn có chắc chắn muốn xóa thành viên này không?")) return;
+        const res = await fetch(`/api/users?id=${id}`, { method: 'DELETE', headers: getHeaders() });
+        if (res.ok) {
+            alert("Đã xóa thành viên thành công!");
+            fetchUsers();
+        } else alert((await res.json()).error);
     };
 
     const handleCancelBooking = async (id: number) => {
-        if (!window.confirm('Hủy lịch đặt này?')) return;
-        const res = await fetch(`/api/bookings?id=${id}`, { method: 'DELETE', headers: authHeaders });
+        if (!window.confirm("Hủy lịch đặt này?")) return;
+        const res = await fetch(`/api/bookings?id=${id}`, { method: 'DELETE', headers: getHeaders() });
         if (res.ok) fetchBookings();
+        else alert("Lỗi khi hủy lịch");
     };
 
-    const navItems: { key: Section; label: string; icon: typeof LayoutDashboard }[] = [
-        { key: 'overview', label: 'Tổng quan', icon: LayoutDashboard },
-        { key: 'courts', label: 'Quản lý sân', icon: MapPin },
-        { key: 'bookings', label: 'Lịch đặt', icon: CalendarCheck },
-        { key: 'users', label: 'Thành viên', icon: Users },
-    ];
+    // ==========================================
+    // LOGIC XỬ LÝ DATA CHO BIỂU ĐỒ (DASHBOARD)
+    // ==========================================
+    const totalRevenue = bookings.reduce((sum, b) => sum + (b.court?.pricePerHour || 0), 0);
+    const totalBookings = bookings.length;
+    const totalUsers = users.length;
 
-    const currency = (n: number) => `${n.toLocaleString('vi-VN')} đ`;
+    // 1. Dữ liệu Biểu đồ Cột (Doanh thu theo ngày)
+    const revenueByDate = bookings.reduce((acc: any, b) => {
+        const date = b.bookDate;
+        if (!acc[date]) acc[date] = 0;
+        acc[date] += (b.court?.pricePerHour || 0);
+        return acc;
+    }, {});
+
+    const chartData = Object.keys(revenueByDate).map(date => ({
+        name: date,
+        "Doanh thu": revenueByDate[date]
+    })).sort((a, b) => a.name.localeCompare(b.name));
+
+    // 2. Dữ liệu Biểu đồ Tròn (Tỷ trọng theo Sân)
+    const revenueByCourt = bookings.reduce((acc: any, b) => {
+        const courtName = b.court?.name || 'Sân đã xóa';
+        if (!acc[courtName]) acc[courtName] = 0;
+        acc[courtName] += (b.court?.pricePerHour || 0);
+        return acc;
+    }, {});
+
+    const pieData = Object.keys(revenueByCourt).map(name => ({
+        name, value: revenueByCourt[name]
+    }));
+
+    const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
 
     return (
-        <div className="min-h-screen bg-slate-100 font-sans text-slate-800 flex">
-            {/* ===== SIDEBAR ===== */}
-            <aside className="hidden md:flex flex-col w-64 bg-slate-900 text-slate-300 fixed inset-y-0 left-0 z-30">
-                <div className="px-6 py-6 border-b border-slate-800">
-                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                        <span className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white">🎾</span>
-                        Admin Panel
-                    </h2>
-                </div>
-                <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
-                    {navItems.map(({ key, label, icon: Icon }) => (
-                        <button
-                            key={key}
-                            onClick={() => setSection(key)}
-                            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
-                                section === key ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'hover:bg-slate-800 hover:text-white'
-                            }`}
-                        >
-                            <Icon className="w-5 h-5" />
-                            {label}
-                        </button>
-                    ))}
-                </nav>
-                <div className="px-3 py-4 border-t border-slate-800">
-                    <button
-                        onClick={() => { localStorage.removeItem('admin_token'); navigate('/login'); }}
-                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
-                    >
-                        <LogOut className="w-5 h-5" />
-                        Đăng xuất
-                    </button>
-                </div>
-            </aside>
+        <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-800">
+            {/* Header Admin */}
+            <header className="bg-slate-900 text-white px-6 md:px-10 py-4 flex justify-between items-center shadow-md">
+                <h1 className="text-2xl font-bold tracking-tight">🎾 Admin Portal</h1>
+                <button onClick={handleLogout} className="px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg font-semibold transition-colors text-sm shadow-md">Đăng xuất</button>
+            </header>
 
-            {/* ===== MAIN ===== */}
-            <div className="flex-1 md:ml-64">
-                {/* Topbar (mobile nav + header) */}
-                <header className="bg-white border-b border-slate-200 sticky top-0 z-20">
-                    <div className="px-4 md:px-8 py-4 flex items-center justify-between">
-                        <div>
-                            <h1 className="text-xl font-bold text-slate-800">{navItems.find((n) => n.key === section)?.label}</h1>
-                            <p className="text-sm text-slate-500 hidden sm:block">Bảng điều khiển quản trị hệ thống đặt sân</p>
-                        </div>
-                        <button
-                            onClick={() => { localStorage.removeItem('admin_token'); navigate('/login'); }}
-                            className="md:hidden flex items-center gap-2 px-3 py-2 text-sm font-medium bg-slate-100 rounded-lg text-slate-700"
-                        >
-                            <LogOut className="w-4 h-4" /> Thoát
-                        </button>
-                    </div>
-                    {/* Mobile section tabs */}
-                    <div className="md:hidden flex overflow-x-auto gap-1 px-4 pb-3">
-                        {navItems.map(({ key, label, icon: Icon }) => (
-                            <button
-                                key={key}
-                                onClick={() => setSection(key)}
-                                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap ${
-                                    section === key ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'
-                                }`}
-                            >
-                                <Icon className="w-4 h-4" /> {label}
-                            </button>
-                        ))}
-                    </div>
-                </header>
+            {/* Navigation Tabs */}
+            <div className="bg-white border-b border-slate-200 px-6 md:px-10 py-3 flex gap-2 overflow-x-auto shadow-sm sticky top-0 z-10">
+                <button onClick={() => setActiveTab('dashboard')} className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'dashboard' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>📊 Dashboard</button>
+                <button onClick={() => setActiveTab('bookings')} className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'bookings' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>📅 Lịch đặt sân</button>
+                <button onClick={() => setActiveTab('courts')} className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'courts' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>🏟 Quản lý sân</button>
+                <button onClick={() => setActiveTab('users')} className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'users' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>👥 Khách hàng</button>
+            </div>
 
-                <main className="p-4 md:p-8">
-                    {loading ? (
-                        <div className="flex items-center justify-center py-32 text-slate-500">
-                            <Loader2 className="w-6 h-6 animate-spin mr-2" /> Đang tải dữ liệu...
-                        </div>
-                    ) : (
-                        <>
-                            {/* ===== OVERVIEW ===== */}
-                            {section === 'overview' && (
-                                <div className="flex flex-col gap-8">
-                                    {/* Stat cards */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                                        <StatCard icon={DollarSign} label="Tổng doanh thu" value={currency(totalRevenue)} accent="bg-blue-600" />
-                                        <StatCard icon={TicketCheck} label="Số lượt đặt sân" value={`${bookings.length}`} accent="bg-emerald-500" />
-                                        <StatCard icon={UserPlus} label="Khách hàng" value={`${users.length}`} accent="bg-amber-500" />
-                                    </div>
+            {/* Main Content */}
+            <main className="flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full">
 
-                                    {/* Charts */}
-                                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-                                        <div className="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                                            <h4 className="font-bold text-slate-800 mb-1">Doanh thu theo ngày</h4>
-                                            <p className="text-sm text-slate-500 mb-4">Tăng trưởng doanh thu theo từng ngày đặt sân</p>
-                                            <div className="w-full h-72">
-                                                <ResponsiveContainer width="100%" height="100%">
-                                                    <BarChart data={dailyRevenueData}>
-                                                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                                                        <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#64748b' }} />
-                                                        <YAxis tick={{ fontSize: 12, fill: '#64748b' }} width={40} />
-                                                        <Tooltip formatter={(v) => currency(Number(v))} cursor={{ fill: '#f1f5f9' }} />
-                                                        <Bar dataKey="Doanh Thu (đ)" fill="#2563eb" barSize={38} radius={[6, 6, 0, 0]} />
-                                                    </BarChart>
-                                                </ResponsiveContainer>
-                                            </div>
-                                        </div>
-                                        <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                                            <h4 className="font-bold text-slate-800 mb-1">Tỷ trọng theo sân</h4>
-                                            <p className="text-sm text-slate-500 mb-4">Phân bổ doanh thu giữa các sân</p>
-                                            <div className="w-full h-72">
-                                                <ResponsiveContainer width="100%" height="100%">
-                                                    <PieChart>
-                                                        <Pie
-                                                            data={courtRevenueData}
-                                                            cx="50%" cy="50%" labelLine={false}
-                                                            label={({ name, percent = 0 }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                                                            outerRadius={90} dataKey="value"
-                                                        >
-                                                            {courtRevenueData.map((_e, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                                                        </Pie>
-                                                        <Tooltip formatter={(v) => currency(Number(v))} />
-                                                    </PieChart>
-                                                </ResponsiveContainer>
-                                            </div>
-                                        </div>
-                                    </div>
+                {/* ==========================================
+                    TAB 1: DASHBOARD & BIỂU ĐỒ 
+                ========================================== */}
+                {activeTab === 'dashboard' && (
+                    <div className="space-y-6 animate-fade-in">
+                        {/* 3 Thẻ thống kê tổng quan */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-5 hover:shadow-md transition-shadow">
+                                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center text-3xl shadow-inner">💰</div>
+                                <div>
+                                    <p className="text-slate-500 font-semibold text-sm uppercase tracking-wider">Tổng doanh thu</p>
+                                    <p className="text-3xl font-extrabold text-slate-800 mt-1">{totalRevenue.toLocaleString('vi-VN')} đ</p>
                                 </div>
-                            )}
+                            </div>
+                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-5 hover:shadow-md transition-shadow">
+                                <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-3xl shadow-inner">📅</div>
+                                <div>
+                                    <p className="text-slate-500 font-semibold text-sm uppercase tracking-wider">Số lượt đặt sân</p>
+                                    <p className="text-3xl font-extrabold text-slate-800 mt-1">{totalBookings} <span className="text-lg text-slate-500 font-medium">lượt</span></p>
+                                </div>
+                            </div>
+                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-5 hover:shadow-md transition-shadow">
+                                <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center text-3xl shadow-inner">👥</div>
+                                <div>
+                                    <p className="text-slate-500 font-semibold text-sm uppercase tracking-wider">Tổng khách hàng</p>
+                                    <p className="text-3xl font-extrabold text-slate-800 mt-1">{totalUsers} <span className="text-lg text-slate-500 font-medium">người</span></p>
+                                </div>
+                            </div>
+                        </div>
 
-                            {/* ===== COURTS ===== */}
-                            {section === 'courts' && (
-                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                    {/* Add court form */}
-                                    <div className="lg:col-span-1">
-                                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sticky top-28">
-                                            <h3 className="font-bold text-slate-800 flex items-center gap-2 mb-5">
-                                                <Plus className="w-5 h-5 text-blue-600" /> Thêm Sân Mới
-                                            </h3>
-                                            <form onSubmit={handleCreateCourt} className="flex flex-col gap-4">
-                                                <Field label="Tên sân">
-                                                    <input type="text" required value={courtFormData.name} placeholder="Sân số 1"
-                                                        onChange={(e) => setCourtFormData({ ...courtFormData, name: e.target.value })} className={inputCls} />
-                                                </Field>
-                                                <Field label="Vị trí">
-                                                    <input type="text" required value={courtFormData.location} placeholder="Quận 1, TP.HCM"
-                                                        onChange={(e) => setCourtFormData({ ...courtFormData, location: e.target.value })} className={inputCls} />
-                                                </Field>
-                                                <Field label="Giá tiền / giờ">
-                                                    <input type="number" required value={courtFormData.pricePerHour} placeholder="150000"
-                                                        onChange={(e) => setCourtFormData({ ...courtFormData, pricePerHour: e.target.value })} className={inputCls} />
-                                                </Field>
-                                                <button type="submit" className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-blue-500/30">
-                                                    <Plus className="w-5 h-5" /> Tạo Sân Mới
-                                                </button>
-                                            </form>
-                                        </div>
+                        {/* 2 Biểu đồ Thống kê */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+                            {/* Biểu đồ Cột */}
+                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                                <h3 className="text-lg font-bold text-slate-800 mb-6 border-l-4 border-emerald-500 pl-3">Doanh thu theo ngày</h3>
+                                <div className="h-80 w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={chartData}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                            <XAxis dataKey="name" tick={{ fill: '#64748b' }} axisLine={false} tickLine={false} />
+                                            <YAxis tick={{ fill: '#64748b' }} axisLine={false} tickLine={false} tickFormatter={(value) => `${(value / 1000)}k`} />
+                                            <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
+                                            <Bar dataKey="Doanh thu" fill="#10b981" radius={[6, 6, 0, 0]} barSize={40} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+
+                            {/* Biểu đồ Tròn */}
+                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                                <h3 className="text-lg font-bold text-slate-800 mb-6 border-l-4 border-blue-500 pl-3">Tỷ trọng doanh thu theo sân</h3>
+                                <div className="h-80 w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie data={pieData} cx="50%" cy="50%" innerRadius={80} outerRadius={110} paddingAngle={5} dataKey="value">
+                                                {pieData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
+                                            <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* ==========================================
+                    TAB 2: QUẢN LÝ LỊCH ĐẶT 
+                ========================================== */}
+                {activeTab === 'bookings' && (
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden animate-fade-in">
+                        <div className="p-6 border-b border-slate-100">
+                            <h3 className="text-lg font-bold text-slate-800">Danh sách Lịch đặt sân</h3>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead className="bg-slate-50 text-slate-500 text-sm uppercase tracking-wider">
+                                    <tr>
+                                        <th className="px-6 py-4 font-semibold">Mã vé</th>
+                                        <th className="px-6 py-4 font-semibold">Khách hàng</th>
+                                        <th className="px-6 py-4 font-semibold">Sân</th>
+                                        <th className="px-6 py-4 font-semibold">Ngày & Giờ</th>
+                                        <th className="px-6 py-4 font-semibold text-center">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {bookings.map(b => (
+                                        <tr key={b.id} className="hover:bg-slate-50 transition-colors">
+                                            <td className="px-6 py-4 font-bold text-slate-700">#{b.id}</td>
+                                            <td className="px-6 py-4 font-medium text-slate-900">{b.user?.name || 'Khách vãng lai'}</td>
+                                            <td className="px-6 py-4 text-blue-600 font-semibold">{b.court?.name || 'Sân đã xóa'}</td>
+                                            <td className="px-6 py-4 text-slate-600">
+                                                <span className="bg-slate-200 text-slate-700 px-2 py-1 rounded text-xs mr-2 font-bold">{b.bookDate}</span>
+                                                <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-xs font-bold">{b.timeSlot}</span>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <button onClick={() => handleCancelBooking(b.id)} className="text-red-500 hover:bg-red-50 px-4 py-2 rounded-lg text-sm font-bold transition-colors border border-transparent hover:border-red-200">Hủy lịch</button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
+                {/* ==========================================
+                    TAB 3: QUẢN LÝ SÂN BÃI
+                ========================================== */}
+                {activeTab === 'courts' && (
+                    <div className="space-y-8 animate-fade-in">
+                        {/* Form thêm sân */}
+                        <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-100">
+                            <h3 className="text-lg font-bold text-slate-800 mb-6 border-l-4 border-blue-500 pl-3">Thêm sân mới</h3>
+                            <form onSubmit={handleCreateCourt} className="flex flex-col md:flex-row gap-4 items-end">
+                                <div className="flex-1 w-full">
+                                    <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Tên sân</label>
+                                    <input type="text" required value={courtFormData.name} onChange={e => setCourtFormData({ ...courtFormData, name: e.target.value })} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                                </div>
+                                <div className="flex-1 w-full">
+                                    <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Vị trí</label>
+                                    <input type="text" required value={courtFormData.location} onChange={e => setCourtFormData({ ...courtFormData, location: e.target.value })} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                                </div>
+                                <div className="flex-1 w-full">
+                                    <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Giá (VNĐ/giờ)</label>
+                                    <input type="number" required value={courtFormData.pricePerHour} onChange={e => setCourtFormData({ ...courtFormData, pricePerHour: e.target.value })} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                                </div>
+                                <button type="submit" className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors shadow-md shadow-blue-500/30">THÊM MỚI</button>
+                            </form>
+                        </div>
+
+                        {/* Grid danh sách sân */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {courts.map(court => (
+                                <div key={court.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow flex flex-col justify-between">
+                                    <div>
+                                        <h4 className="text-xl font-bold text-slate-800">{court.name}</h4>
+                                        <p className="text-slate-500 text-sm mt-2 flex items-center gap-1">📍 {court.location}</p>
+                                        <p className="text-emerald-600 font-bold mt-4 text-lg">{court.pricePerHour.toLocaleString('vi-VN')} <span className="text-sm font-normal text-slate-500">đ/giờ</span></p>
                                     </div>
-                                    {/* Court grid */}
-                                    <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                        {courts.map((court) => (
-                                            <div key={court.id} className="bg-white rounded-2xl shadow-sm border-t-4 border-x border-b border-slate-200 p-5 hover:shadow-lg transition-shadow">
-                                                <div className="flex items-start justify-between">
-                                                    <div>
-                                                        <h3 className="font-bold text-slate-800 text-lg">{court.name}</h3>
-                                                        <p className="text-sm text-slate-500 flex items-center gap-1.5 mt-1">
-                                                            <MapPin className="w-4 h-4 text-slate-400" /> {court.location}
-                                                        </p>
-                                                    </div>
-                                                    <button onClick={() => handleDeleteCourt(court.id)} title="Xóa sân"
-                                                        className="p-2 rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors">
-                                                        <Trash2 className="w-5 h-5" />
-                                                    </button>
-                                                </div>
-                                                <p className="text-amber-600 font-extrabold text-lg mt-4">{currency(court.pricePerHour)}<span className="text-sm font-medium text-slate-400">/giờ</span></p>
-                                            </div>
+                                    <button onClick={() => handleDeleteCourt(court.id)} className="mt-6 w-full py-2.5 bg-red-50 text-red-600 font-bold rounded-lg hover:bg-red-500 hover:text-white transition-colors border border-red-100">Xóa sân này</button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* ==========================================
+                    TAB 4: QUẢN LÝ KHÁCH HÀNG 
+                ========================================== */}
+                {activeTab === 'users' && (
+                    <div className="space-y-8 animate-fade-in">
+                        {/* Form thêm user */}
+                        <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-100">
+                            <h3 className="text-lg font-bold text-slate-800 mb-6 border-l-4 border-amber-500 pl-3">Đăng ký Thành viên</h3>
+                            <form onSubmit={handleRegisterUser} className="flex flex-col md:flex-row gap-4 items-end">
+                                <div className="flex-1 w-full">
+                                    <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Họ Tên</label>
+                                    <input type="text" required value={userFormData.name} onChange={e => setUserFormData({ ...userFormData, name: e.target.value })} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                                </div>
+                                <div className="flex-1 w-full">
+                                    <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Email</label>
+                                    <input type="email" required value={userFormData.email} onChange={e => setUserFormData({ ...userFormData, email: e.target.value })} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                                </div>
+                                <div className="flex-1 w-full">
+                                    <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Số điện thoại</label>
+                                    <input type="text" required value={userFormData.phone} onChange={e => setUserFormData({ ...userFormData, phone: e.target.value })} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                                </div>
+                                <button type="submit" className="w-full md:w-auto bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-8 rounded-lg transition-colors shadow-md shadow-amber-500/30">TẠO TÀI KHOẢN</button>
+                            </form>
+                        </div>
+
+                        {/* Table User */}
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead className="bg-slate-50 text-slate-500 text-sm uppercase tracking-wider">
+                                        <tr>
+                                            <th className="px-6 py-4 font-semibold">ID</th>
+                                            <th className="px-6 py-4 font-semibold">Họ Tên</th>
+                                            <th className="px-6 py-4 font-semibold">Email</th>
+                                            <th className="px-6 py-4 font-semibold">SĐT</th>
+                                            <th className="px-6 py-4 font-semibold text-center">Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {users.map((user) => (
+                                            <tr key={user.id} className="hover:bg-slate-50 transition-colors">
+                                                <td className="px-6 py-4 font-bold text-slate-700">#{user.id}</td>
+                                                <td className="px-6 py-4 font-medium text-slate-900">{user.name}</td>
+                                                <td className="px-6 py-4 text-slate-600">{user.email}</td>
+                                                <td className="px-6 py-4 text-slate-600">{user.phone || 'Chưa cập nhật'}</td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <button onClick={() => handleDeleteUser(user.id)} className="bg-red-50 text-red-600 hover:bg-red-500 hover:text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors border border-transparent hover:border-red-200">Xóa</button>
+                                                </td>
+                                            </tr>
                                         ))}
-                                        {courts.length === 0 && <EmptyState label="Chưa có sân nào." />}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* ===== BOOKINGS ===== */}
-                            {section === 'bookings' && (
-                                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                                    {bookings.length === 0 ? <EmptyState label="Chưa có lịch đặt nào." /> : (
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full text-left text-sm">
-                                                <thead className="bg-slate-50 text-slate-500 uppercase text-xs tracking-wider">
-                                                    <tr>
-                                                        <Th>Mã</Th><Th>Khách hàng</Th><Th>Sân</Th><Th>Ngày chơi</Th><Th>Khung giờ</Th><Th className="text-right">Thao tác</Th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-slate-100">
-                                                    {bookings.map((b) => (
-                                                        <tr key={b.id} className="hover:bg-slate-50 transition-colors">
-                                                            <td className="px-6 py-4 font-bold text-slate-700">#{b.id}</td>
-                                                            <td className="px-6 py-4 font-medium text-slate-900">{b.user?.name}</td>
-                                                            <td className="px-6 py-4 text-slate-600">{b.court?.name}</td>
-                                                            <td className="px-6 py-4 text-slate-600">{b.bookDate}</td>
-                                                            <td className="px-6 py-4 font-semibold text-blue-600">{b.timeSlot}</td>
-                                                            <td className="px-6 py-4 text-right">
-                                                                <button onClick={() => handleCancelBooking(b.id)}
-                                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-colors">
-                                                                    <XCircle className="w-4 h-4" /> Hủy lịch
-                                                                </button>
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* ===== USERS ===== */}
-                            {section === 'users' && (
-                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                    <div className="lg:col-span-1">
-                                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sticky top-28">
-                                            <h3 className="font-bold text-slate-800 flex items-center gap-2 mb-5">
-                                                <UserPlus className="w-5 h-5 text-blue-600" /> Thêm thành viên
-                                            </h3>
-                                            <form onSubmit={handleRegisterUser} className="flex flex-col gap-4">
-                                                <Field label="Họ và tên">
-                                                    <input type="text" required value={userFormData.name} placeholder="Nguyễn Văn A"
-                                                        onChange={(e) => setUserFormData({ ...userFormData, name: e.target.value })} className={inputCls} />
-                                                </Field>
-                                                <Field label="Email">
-                                                    <input type="email" required value={userFormData.email} placeholder="email@example.com"
-                                                        onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })} className={inputCls} />
-                                                </Field>
-                                                <Field label="Số điện thoại">
-                                                    <input type="text" value={userFormData.phone} placeholder="0987 654 321"
-                                                        onChange={(e) => setUserFormData({ ...userFormData, phone: e.target.value })} className={inputCls} />
-                                                </Field>
-                                                <button type="submit" className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-blue-500/30">
-                                                    <UserPlus className="w-5 h-5" /> Đăng ký
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                    <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                                        {users.length === 0 ? <EmptyState label="Chưa có thành viên nào." /> : (
-                                            <div className="overflow-x-auto">
-                                                <table className="w-full text-left text-sm">
-                                                    <thead className="bg-slate-50 text-slate-500 uppercase text-xs tracking-wider">
-                                                        <tr><Th>ID</Th><Th>Họ tên</Th><Th>Email</Th><Th>SĐT</Th></tr>
-                                                    </thead>
-                                                    <tbody className="divide-y divide-slate-100">
-                                                        {users.map((u) => (
-                                                            <tr key={u.id} className="hover:bg-slate-50 transition-colors">
-                                                                <td className="px-6 py-4 font-bold text-slate-700">{u.id}</td>
-                                                                <td className="px-6 py-4 font-medium text-slate-900">{u.name}</td>
-                                                                <td className="px-6 py-4 text-slate-600">{u.email}</td>
-                                                                <td className="px-6 py-4 text-slate-600">{u.phone || 'Chưa cập nhật'}</td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-                        </>
-                    )}
-                </main>
-            </div>
-        </div>
-    );
-}
-
-const inputCls =
-    'w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all';
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-    return (
-        <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-slate-700">{label}</label>
-            {children}
-        </div>
-    );
-}
-
-function Th({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-    return <th className={`px-6 py-3.5 font-semibold ${className}`}>{children}</th>;
-}
-
-function EmptyState({ label }: { label: string }) {
-    return <div className="p-10 text-center text-slate-400 text-sm w-full">{label}</div>;
-}
-
-function StatCard({ icon: Icon, label, value, accent }: { icon: typeof DollarSign; label: string; value: string; accent: string }) {
-    return (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-xl ${accent} flex items-center justify-center text-white shrink-0`}>
-                <Icon className="w-6 h-6" />
-            </div>
-            <div className="min-w-0">
-                <p className="text-sm text-slate-500">{label}</p>
-                <p className="text-xl font-extrabold text-slate-800 truncate">{value}</p>
-            </div>
-            <TrendingUp className="w-5 h-5 text-emerald-500 ml-auto shrink-0" />
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </main>
         </div>
     );
 }
