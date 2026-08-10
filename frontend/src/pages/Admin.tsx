@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-
+import toast from 'react-hot-toast';
 interface Court { id: number; name: string; location: string; pricePerHour: number; imageUrl?: string; }
 interface User { id: number; name: string; email: string; phone: string; }
 interface Booking { id: number; court: Court; user: User; bookDate: string; timeSlot: string; }
@@ -65,7 +65,7 @@ function Admin() {
             body: JSON.stringify({ ...courtFormData, pricePerHour: Number(courtFormData.pricePerHour) }),
         });
         if (res.ok) {
-            alert("Thêm sân mới thành công!");
+            toast.success("Thêm sân mới thành công!");
             setCourtFormData({ name: '', location: '', pricePerHour: '' });
             fetchCourts();
         }
@@ -75,7 +75,7 @@ function Admin() {
         if (!window.confirm("Xóa sân này? Hệ thống sẽ báo lỗi nếu sân đang có lịch đặt.")) return;
         const res = await fetch(`/api/courts?id=${id}`, { method: 'DELETE', headers: getHeaders() });
         if (res.ok) fetchCourts();
-        else alert((await res.json()).error);
+        else toast.error((await res.json()).error);
     };
 
     const handleRegisterUser = async (e: FormEvent) => {
@@ -86,26 +86,26 @@ function Admin() {
             body: JSON.stringify(userFormData)
         });
         if (res.ok) {
-            alert("Đã thêm thành viên!");
+            toast.success("Đã thêm thành viên!");
             setUserFormData({ name: '', email: '', phone: '', password: '' });
             fetchUsers();
-        } else alert((await res.json()).error);
+        } else toast.error((await res.json()).error);
     };
 
     const handleDeleteUser = async (id: number) => {
         if (!window.confirm("Bạn có chắc chắn muốn xóa thành viên này không?")) return;
         const res = await fetch(`/api/users?id=${id}`, { method: 'DELETE', headers: getHeaders() });
         if (res.ok) {
-            alert("Đã xóa thành viên thành công!");
+            toast.success("Đã xóa thành viên thành công!");
             fetchUsers();
-        } else alert((await res.json()).error);
+        } else toast.error((await res.json()).error);
     };
 
     const handleCancelBooking = async (id: number) => {
         if (!window.confirm("Hủy lịch đặt này?")) return;
         const res = await fetch(`/api/bookings?id=${id}`, { method: 'DELETE', headers: getHeaders() });
         if (res.ok) fetchBookings();
-        else alert("Lỗi khi hủy lịch");
+        else toast.error("Lỗi khi hủy lịch");
     };
 
     // ==========================================

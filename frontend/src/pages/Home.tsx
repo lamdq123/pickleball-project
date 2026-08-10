@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-
+import toast from 'react-hot-toast';
 interface Court { id: number; name: string; location: string; pricePerHour: number; imageUrl?: string; }
 
 function Home() {
@@ -58,7 +58,7 @@ function Home() {
 
         if (res.ok) {
             if (authMode === 'register') {
-                alert('Đăng ký thành công! Vui lòng đăng nhập.');
+                toast.success('Đăng ký thành công! Vui lòng đăng nhập.');
                 setAuthMode('login');
             } else {
                 localStorage.setItem('customer_token', data.token);
@@ -66,7 +66,7 @@ function Home() {
                 setToken(data.token); setCurrentUser(data.user);
             }
             setAuthForm({ name: '', email: '', phone: '', password: '' });
-        } else alert(data.error);
+        } else toast.error(data.error);
     };
 
     const handleLogout = () => {
@@ -91,9 +91,9 @@ function Home() {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bookingPayload)
         });
         if (res.ok) {
-            alert('🎉 Thanh toán thành công! Chúng tôi đã gửi biên lai về Email của bạn.');
+            toast.success('🎉 Thanh toán thành công! Chúng tôi đã gửi biên lai về Email của bạn.');
             setSelectedCourt(null); setBookDate(''); setTimeSlot(''); setBookingPayload(null);
-        } else alert((await res.json()).error);
+        } else toast.error((await res.json()).error);
     };
 
     return (

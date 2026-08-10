@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, Mail, LogIn, ShieldCheck, Loader2 } from 'lucide-react';
-
+import toast from 'react-hot-toast';
 function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -24,10 +24,10 @@ function Login() {
                 navigate('/admin');
             } else {
                 const err = await res.json();
-                alert(err.error);
+                toast.error(err.error);
             }
         } catch {
-            alert('Lỗi kết nối server!');
+            toast.error('Lỗi kết nối server!');
         } finally {
             setLoading(false);
         }
