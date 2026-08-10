@@ -7,8 +7,8 @@ interface Booking { id: number; court: Court; bookDate: string; timeSlot: string
 function Profile() {
     const navigate = useNavigate();
     const [history, setHistory] = useState<Booking[]>([]);
-    const [token, setToken] = useState(localStorage.getItem('customer_token') || '');
-    const [currentUser, setCurrentUser] = useState<any>(JSON.parse(localStorage.getItem('customer_info') || 'null'));
+    const [token] = useState(localStorage.getItem('customer_token') || '');
+    const [currentUser] = useState<any>(JSON.parse(localStorage.getItem('customer_info') || 'null'));
 
     useEffect(() => {
         if (!currentUser) {

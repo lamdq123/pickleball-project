@@ -2,12 +2,10 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 
 interface Court { id: number; name: string; location: string; pricePerHour: number; imageUrl?: string; }
-interface Booking { id: number; court: Court; bookDate: string; timeSlot: string; createdAt: string; }
 
 function Home() {
 
     const [courts, setCourts] = useState<Court[]>([]);
-    const [history, setHistory] = useState<Booking[]>([]);
     const [token, setToken] = useState(localStorage.getItem('customer_token') || '');
     const [currentUser, setCurrentUser] = useState<any>(JSON.parse(localStorage.getItem('customer_info') || 'null'));
     const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
@@ -31,7 +29,6 @@ function Home() {
 
     useEffect(() => {
         fetchCourts();
-        if (token) fetchHistory();
     }, [token]);
 
     useEffect(() => {
@@ -51,11 +48,6 @@ function Home() {
         if (res.ok) setCourts(await res.json());
     };
 
-    const fetchHistory = async () => {
-        const res = await fetch('/api/customer?action=history', { headers: { 'Authorization': `Bearer ${token}` } });
-        if (res.ok) setHistory(await res.json());
-        else handleLogout();
-    };
 
     const handleAuth = async (e: FormEvent) => {
         e.preventDefault();
@@ -79,7 +71,7 @@ function Home() {
 
     const handleLogout = () => {
         localStorage.removeItem('customer_token'); localStorage.removeItem('customer_info');
-        setToken(''); setCurrentUser(null); setHistory([]);
+        setToken(''); setCurrentUser(null);
     };
 
     const handleInitBooking = (e: FormEvent) => {
@@ -101,7 +93,6 @@ function Home() {
         if (res.ok) {
             alert('🎉 Thanh toán thành công! Chúng tôi đã gửi biên lai về Email của bạn.');
             setSelectedCourt(null); setBookDate(''); setTimeSlot(''); setBookingPayload(null);
-            fetchHistory();
         } else alert((await res.json()).error);
     };
 
