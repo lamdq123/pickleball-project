@@ -1,17 +1,22 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 
-interface Court { id: number; name: string; location: string; pricePerHour: number; }
+interface Court { id: number; name: string; location: string; pricePerHour: number; imageUrl?: string; }
 interface Booking { id: number; court: Court; bookDate: string; timeSlot: string; createdAt: string; }
 
 function Home() {
+
     const [courts, setCourts] = useState<Court[]>([]);
     const [history, setHistory] = useState<Booking[]>([]);
     const [token, setToken] = useState(localStorage.getItem('customer_token') || '');
     const [currentUser, setCurrentUser] = useState<any>(JSON.parse(localStorage.getItem('customer_info') || 'null'));
     const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
     const [authForm, setAuthForm] = useState({ name: '', email: '', phone: '', password: '' });
-    const [selectedCourt, setSelectedCourt] = useState<Court | null>(null);
+
+    // 👉 State quản lý luồng Đặt sân & Xem chi tiết
+    const [selectedCourt, setSelectedCourt] = useState<Court | null>(null); // Sân đang chọn để Đặt giờ
+    const [viewCourt, setViewCourt] = useState<Court | null>(null);         // Sân đang bật Pop-up xem chi tiết
+
     const [bookDate, setBookDate] = useState('');
     const [timeSlot, setTimeSlot] = useState('');
     const [bookedSlots, setBookedSlots] = useState<string[]>([]);
@@ -20,6 +25,9 @@ function Home() {
     const [bookingPayload, setBookingPayload] = useState<any>(null);
 
     const TIME_SLOTS = ['05:00 - 06:00', '06:00 - 07:00', '17:00 - 18:00', '18:00 - 19:00', '19:00 - 20:00'];
+
+    // Placeholder Image tĩnh (Dùng tạm khi DB chưa có ảnh)
+    const DEFAULT_COURT_IMG = "https://images.unsplash.com/photo-1622279457486-69d73ad5e4d2?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80";
 
     useEffect(() => {
         fetchCourts();
@@ -99,23 +107,20 @@ function Home() {
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-800 pb-20">
-
-            {/* TASK 1: REFACTOR NAVBAR */}
-            <nav className="flex justify-between items-center px-6 md:px-10 py-4 bg-slate-900 text-white shadow-lg sticky top-0 z-40">
-                <h2 className="text-2xl font-bold tracking-tight">🎾 Pickleball Club</h2>
-                <div>
-                    {currentUser ? (
-                        <div className="flex items-center gap-4">
-                            <span className="hidden md:inline text-slate-300">Xin chào, <strong className="font-semibold text-white">{currentUser.name}</strong></span>
-                            <button onClick={handleLogout} className="px-4 py-2 text-sm font-medium border border-slate-600 rounded-lg hover:bg-slate-800 transition-colors">Đăng xuất</button>
-                        </div>
-                    ) : (
-                        <Link to="/admin" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">🔑 Dành cho Admin</Link>
-                    )}
+            {/* NAVBAR */}
+            <nav className="flex justify-between items-center px-6 md:px-10 py-4 bg-slate-900 text-white shadow-lg sticky top-0 z-30">
+                <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+                    <span className="text-emerald-400">🎾</span> Pickleball Club
+                </h2>
+                <div className="flex items-center gap-4">
+                    <Link to="/profile" className="hidden md:inline text-slate-300 hover:text-emerald-400 transition-colors cursor-pointer">
+                        Xin chào, <strong className="font-semibold text-white">{currentUser.name}</strong>
+                    </Link>
+                    <button onClick={handleLogout} className="px-4 py-2 text-sm font-medium border border-slate-600 rounded-lg hover:bg-slate-800 transition-colors">Đăng xuất</button>
                 </div>
             </nav>
 
-            {/* TASK 2: HERO BANNER SECTION */}
+            {/* HERO BANNER SECTION */}
             {!currentUser && (
                 <section className="bg-linear-to-br from-slate-800 to-blue-900 text-white py-20 px-6 text-center shadow-inner">
                     <h1 className="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight">Trải nghiệm đặt sân Pickleball siêu tốc</h1>
@@ -128,8 +133,7 @@ function Home() {
 
             <div className="max-w-6xl mx-auto px-4 mt-10">
                 {!currentUser ? (
-
-                    /* TASK 3: REFACTOR AUTH CARD */
+                    /* FORM ĐĂNG NHẬP / ĐĂNG KÝ */
                     <div className="flex justify-center mt-10">
                         <div className="bg-white p-8 md:p-10 rounded-2xl shadow-2xl w-full max-w-md mx-auto border border-slate-100 transform transition-all">
                             <h2 className="text-3xl font-bold text-center text-slate-800 mb-2">
@@ -162,33 +166,46 @@ function Home() {
                     </div>
                 ) : (
                     <div className="animate-fade-in-up">
-                        <div className="flex items-center gap-3 mb-6">
+
+                        {/* DANH SÁCH SÂN */}
+                        <div className="flex items-center justify-between mb-6">
                             <h2 className="text-2xl font-bold text-slate-800 border-l-4 border-blue-600 pl-3">Danh sách sân hôm nay</h2>
                         </div>
 
-                        {/* TASK 4: REFACTOR COURT CARDS */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
                             {courts.map(court => (
-                                <div key={court.id} className="bg-white rounded-xl shadow-md border-t-4 border-blue-500 p-6 hover:shadow-lg transition-shadow relative overflow-hidden group">
-                                    <h3 className="text-xl font-bold text-slate-800 mb-2">{court.name}</h3>
-                                    <p className="text-slate-500 text-sm mb-2 flex items-center gap-2">
-                                        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                                        {court.location}
-                                    </p>
-                                    <p className="text-blue-600 font-extrabold text-lg mb-6">{court.pricePerHour.toLocaleString('vi-VN')} đ/giờ</p>
-                                    <button onClick={() => setSelectedCourt(court)} className="w-full py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors">
-                                        ĐẶT SÂN NÀY
-                                    </button>
+                                <div key={court.id} className="bg-white rounded-xl shadow-md border border-slate-100 p-5 hover:shadow-xl transition-shadow flex flex-col justify-between">
+                                    <div>
+                                        <div className="h-40 bg-slate-200 rounded-lg mb-4 overflow-hidden">
+                                            <img src={court.imageUrl || DEFAULT_COURT_IMG} alt="Court" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+                                        </div>
+                                        <h3 className="text-xl font-bold text-slate-800 mb-2 line-clamp-1">{court.name}</h3>
+                                        <p className="text-slate-500 text-sm mb-4 flex items-center gap-1 line-clamp-1">
+                                            📍 {court.location}
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <p className="text-blue-600 font-extrabold text-lg mb-4">{court.pricePerHour.toLocaleString('vi-VN')} đ <span className="text-sm text-slate-500 font-normal">/giờ</span></p>
+                                        <div className="flex gap-2">
+                                            <button onClick={() => setViewCourt(court)} className="flex-1 py-2.5 bg-slate-100 text-slate-700 rounded-lg font-semibold hover:bg-slate-200 transition-colors border border-slate-200">
+                                                Xem chi tiết
+                                            </button>
+                                            <button onClick={() => setSelectedCourt(court)} className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-md shadow-blue-500/30">
+                                                ĐẶT NGAY
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             ))}
                         </div>
 
-                        {/* TASK 5: REFACTOR BOOKING FORM */}
+                        {/* FORM ĐẶT SÂN */}
                         {selectedCourt && (
-                            <div className="bg-white rounded-xl shadow-md border border-slate-200 p-6 md:p-8 mb-12 animate-fade-in-up">
+                            <div className="bg-white rounded-xl shadow-md border border-slate-200 p-6 md:p-8 mb-12 animate-fade-in-up scroll-mt-24" id="booking-form">
                                 <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
                                     <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                    Tạo lịch đặt: {selectedCourt.name}
+                                    Tạo lịch đặt: <span className="text-blue-600">{selectedCourt.name}</span>
                                 </h3>
                                 <form onSubmit={handleInitBooking} className="flex flex-wrap gap-4 items-end">
                                     <div className="flex flex-col w-full md:w-64">
@@ -211,67 +228,85 @@ function Home() {
                                     </div>
                                     <div className="flex gap-3 w-full md:w-auto mt-2 md:mt-0">
                                         <button type="submit" className="flex-1 md:flex-none px-6 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-md shadow-blue-500/30">
-                                            THANH TOÁN
+                                            XÁC NHẬN & THANH TOÁN
                                         </button>
-                                        <button type="button" onClick={() => setSelectedCourt(null)} className="px-6 py-3 bg-slate-400 text-white rounded-lg font-bold hover:bg-slate-500 transition-colors">
+                                        <button type="button" onClick={() => setSelectedCourt(null)} className="px-6 py-3 bg-slate-100 text-slate-700 rounded-lg font-bold hover:bg-slate-200 transition-colors border border-slate-200">
                                             HỦY
                                         </button>
                                     </div>
                                 </form>
                             </div>
                         )}
-
-                        <div className="flex items-center gap-3 mb-6 mt-8">
-                            <h2 className="text-2xl font-bold text-slate-800 border-l-4 border-slate-600 pl-3">Lịch sử đặt sân</h2>
-                        </div>
-
-                        {/* TASK 6: REFACTOR HISTORY TABLE */}
-                        {history.length === 0 ? (
-                            <div className="bg-white p-8 rounded-2xl text-center border border-dashed border-slate-300">
-                                <p className="text-slate-500">Bạn chưa có lịch đặt nào.</p>
-                            </div>
-                        ) : (
-                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-10">
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-left border-collapse">
-                                        <thead className="bg-slate-700 text-white">
-                                            <tr>
-                                                <th className="px-6 py-4 text-left text-sm uppercase tracking-wider font-semibold">Mã vé</th>
-                                                <th className="px-6 py-4 text-left text-sm uppercase tracking-wider font-semibold">Sân</th>
-                                                <th className="px-6 py-4 text-left text-sm uppercase tracking-wider font-semibold">Ngày chơi</th>
-                                                <th className="px-6 py-4 text-left text-sm uppercase tracking-wider font-semibold">Khung giờ</th>
-                                                <th className="px-6 py-4 text-left text-sm uppercase tracking-wider font-semibold">Trạng thái</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100">
-                                            {history.map(b => (
-                                                <tr key={b.id} className="hover:bg-slate-50 transition-colors">
-                                                    <td className="px-6 py-4 font-bold text-slate-700">#{b.id}</td>
-                                                    <td className="px-6 py-4 font-medium text-slate-900">{b.court?.name}</td>
-                                                    <td className="px-6 py-4 text-slate-600">{b.bookDate}</td>
-                                                    <td className="px-6 py-4 font-bold text-blue-600">{b.timeSlot}</td>
-                                                    <td className="px-6 py-4">
-                                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200">
-                                                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
-                                                            Đã xác nhận
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        )}
                     </div>
                 )}
             </div>
 
-            {/* TASK 7: REFACTOR QR MODAL */}
+            {/* =========================================
+                MODAL XEM CHI TIẾT SÂN (COURT DETAIL)
+            ========================================= */}
+            {viewCourt && (
+                <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+                    <div className="bg-white rounded-2xl w-full max-w-3xl overflow-hidden flex flex-col md:flex-row shadow-2xl transform scale-100 transition-all">
+
+                        {/* Ảnh Sân (Bên trái) */}
+                        <div className="w-full md:w-1/2 h-64 md:h-auto bg-slate-200 relative">
+                            <img src={viewCourt.imageUrl || DEFAULT_COURT_IMG} alt={viewCourt.name} className="w-full h-full object-cover" />
+                            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-sm font-bold text-blue-600 shadow">
+                                Phổ biến nhất
+                            </div>
+                        </div>
+
+                        {/* Thông tin Sân (Bên phải) */}
+                        <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col justify-between bg-white">
+                            <div>
+                                <div className="flex justify-between items-start mb-2">
+                                    <h2 className="text-2xl font-bold text-slate-800">{viewCourt.name}</h2>
+                                    <button onClick={() => setViewCourt(null)} className="text-slate-400 hover:text-red-500 transition-colors bg-slate-100 hover:bg-red-50 rounded-full p-2">
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    </button>
+                                </div>
+                                <p className="text-slate-500 mb-6 flex items-center gap-1">📍 {viewCourt.location}</p>
+
+                                {/* Badges Tiện ích ảo */}
+                                <div className="flex flex-wrap gap-2 mb-6">
+                                    <span className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-semibold border border-blue-100 flex items-center gap-1">✨ Sân thảm chuẩn thi đấu</span>
+                                    <span className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 flex items-center gap-1">💡 Đèn LED ban đêm</span>
+                                    <span className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 flex items-center gap-1">🥤 Có bán nước & bóng</span>
+                                    <span className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 flex items-center gap-1">🚗 Đỗ xe ô tô miễn phí</span>
+                                </div>
+
+                                <p className="text-slate-600 text-sm leading-relaxed mb-6">
+                                    Trải nghiệm không gian thể thao đẳng cấp với mặt sân chống trơn trượt đạt chuẩn quốc tế. Không gian rộng rãi, thoáng mát, cực kỳ phù hợp cho cả tập luyện nghiệp dư lẫn thi đấu.
+                                </p>
+                            </div>
+
+                            <div className="pt-6 border-t border-slate-100 mt-auto">
+                                <div className="flex items-end justify-between mb-4">
+                                    <span className="text-slate-500 font-medium">Giá thuê:</span>
+                                    <span className="text-2xl font-extrabold text-blue-600">{viewCourt.pricePerHour.toLocaleString('vi-VN')}đ<span className="text-sm font-normal text-slate-500">/giờ</span></span>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        setSelectedCourt(viewCourt);
+                                        setViewCourt(null);
+                                        // Scroll từ từ xuống form đặt sân
+                                        setTimeout(() => document.getElementById('booking-form')?.scrollIntoView({ behavior: 'smooth' }), 100);
+                                    }}
+                                    className="w-full bg-slate-900 hover:bg-blue-600 text-white font-bold py-3.5 rounded-xl transition-all active:scale-95 shadow-lg shadow-slate-900/20"
+                                >
+                                    ĐẶT LỊCH SÂN NÀY NGAY
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL MÃ QR THANH TOÁN */}
             {showQR && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm text-center transform transition-all scale-100">
-                        <h3 className="text-2xl font-bold text-slate-800 mb-2">Quét mã thanh toán</h3>
+                        <h3 className="text-2xl font-bold text-blue-600 mb-2">Quét mã thanh toán</h3>
                         <p className="text-slate-500 text-sm mb-6">Sử dụng App ngân hàng hoặc Momo để quét</p>
 
                         <div className="border border-slate-200 p-3 rounded-xl inline-block mb-6 bg-slate-50 shadow-inner">
@@ -279,10 +314,10 @@ function Home() {
                         </div>
 
                         <div className="flex flex-col gap-3">
-                            <button onClick={handleConfirmPayment} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg transition-colors shadow-md shadow-emerald-600/30">
+                            <button onClick={handleConfirmPayment} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-colors shadow-md shadow-emerald-600/30">
                                 ✅ TÔI ĐÃ CHUYỂN KHOẢN
                             </button>
-                            <button onClick={() => setShowQR(false)} className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-lg transition-colors shadow-md shadow-red-500/30">
+                            <button onClick={() => setShowQR(false)} className="w-full bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 font-bold py-3 rounded-xl transition-colors">
                                 ❌ HỦY GIAO DỊCH
                             </button>
                         </div>

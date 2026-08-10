@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
 import Home from './pages/Home';
 import Admin from './pages/Admin';
 import Login from './pages/Login';
+import Profile from './pages/Profile';
 
 // ==========================================
 // COMPONENT TRẠM GÁC (Bảo vệ trang Admin)
@@ -40,8 +41,8 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/profile" element={<Profile />} /> {/* 👉 THÊM DÒNG NÀY */}
 
-          {/* Bao bọc trang Admin bằng Trạm gác ProtectedRoute */}
           <Route path="/admin" element={
             <ProtectedRoute>
               <Admin />
