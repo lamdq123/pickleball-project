@@ -5,27 +5,19 @@ interface Court { id: number; name: string; location: string; pricePerHour: numb
 interface Booking { id: number; court: Court; bookDate: string; timeSlot: string; createdAt: string; }
 
 function Home() {
-    
-    // State dữ liệu chung
     const [courts, setCourts] = useState<Court[]>([]);
     const [history, setHistory] = useState<Booking[]>([]);
-    
-    // State xác thực khách hàng
     const [token, setToken] = useState(localStorage.getItem('customer_token') || '');
     const [currentUser, setCurrentUser] = useState<any>(JSON.parse(localStorage.getItem('customer_info') || 'null'));
     const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
     const [authForm, setAuthForm] = useState({ name: '', email: '', phone: '', password: '' });
-
-    // State Đặt sân
     const [selectedCourt, setSelectedCourt] = useState<Court | null>(null);
     const [bookDate, setBookDate] = useState('');
     const [timeSlot, setTimeSlot] = useState('');
     const [bookedSlots, setBookedSlots] = useState<string[]>([]);
-    
-    // 👉 STATE MỚI: Dành cho tính năng Thanh toán QR
     const [showQR, setShowQR] = useState(false);
     const [qrUrl, setQrUrl] = useState('');
-    const [bookingPayload, setBookingPayload] = useState<any>(null); // Lưu tạm dữ liệu đặt sân chờ thanh toán
+    const [bookingPayload, setBookingPayload] = useState<any>(null);
     
     const TIME_SLOTS = ['05:00 - 06:00', '06:00 - 07:00', '17:00 - 18:00', '18:00 - 19:00', '19:00 - 20:00'];
 
@@ -39,7 +31,7 @@ function Home() {
             fetch(`/api/check-slots?courtId=${selectedCourt.id}&date=${bookDate}`)
                 .then(res => res.json())
                 .then(data => { if (Array.isArray(data)) setBookedSlots(data); })
-                .catch(err => console.error("Lỗi khi tải giờ trống:", err));
+                .catch(err => console.error(err));
         } else {
             setBookedSlots([]);
         }
@@ -52,23 +44,15 @@ function Home() {
     };
 
     const fetchHistory = async () => {
-        const res = await fetch('/api/customer?action=history', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (res.ok) {
-            setHistory(await res.json());
-        } else {
-            handleLogout();
-        }
+        const res = await fetch('/api/customer?action=history', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (res.ok) setHistory(await res.json());
+        else handleLogout();
     };
 
     const handleAuth = async (e: FormEvent) => {
         e.preventDefault();
-        const url = `/api/customer?action=${authMode}`;
-        const res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(authForm)
+        const res = await fetch(`/api/customer?action=${authMode}`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(authForm)
         });
         const data = await res.json();
         
@@ -79,230 +63,232 @@ function Home() {
             } else {
                 localStorage.setItem('customer_token', data.token);
                 localStorage.setItem('customer_info', JSON.stringify(data.user));
-                setToken(data.token);
-                setCurrentUser(data.user);
+                setToken(data.token); setCurrentUser(data.user);
             }
             setAuthForm({ name: '', email: '', phone: '', password: '' });
-        } else {
-            alert(data.error);
-        }
+        } else alert(data.error);
     };
 
     const handleLogout = () => {
-        localStorage.removeItem('customer_token');
-        localStorage.removeItem('customer_info');
-        setToken('');
-        setCurrentUser(null);
-        setHistory([]);
+        localStorage.removeItem('customer_token'); localStorage.removeItem('customer_info');
+        setToken(''); setCurrentUser(null); setHistory([]);
     };
 
-    // =====================================
-    // BƯỚC 1: XỬ LÝ NÚT BẤM ĐẶT SÂN -> SINH MÃ QR
-    // =====================================
     const handleInitBooking = (e: FormEvent) => {
         e.preventDefault();
-        if (!currentUser) return alert('Vui lòng đăng nhập!');
-        if (!selectedCourt) return alert('Vui lòng chọn sân!');
-        
-        // 1. Tính toán số tiền và nội dung
+        if (!currentUser || !selectedCourt) return;
         const amount = selectedCourt.pricePerHour;
-        const addInfo = `Thanh toan san ${selectedCourt.id} KH ${currentUser.id}`; // Không dấu để tránh lỗi font ngân hàng
-        
-        // 2. Tạo link VietQR (Sử dụng MB Bank, stk ảo để demo)
-        const bankId = 'MB'; // Mã ngân hàng (Ví dụ: MB, VCB, TCB...)
-        const accountNo = '0987654321'; // Số tài khoản admin
-        const accountName = 'PICKLEBALL CLUB'; // Tên chủ tài khoản
-        
-        const url = `https://img.vietqr.io/image/${bankId}-${accountNo}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(addInfo)}&accountName=${encodeURIComponent(accountName)}`;
-        
-        // 3. Hiển thị QR và lưu tạm dữ liệu chờ thanh toán
+        const addInfo = `Thanh toan san ${selectedCourt.id} KH ${currentUser.id}`;
+        const url = `https://img.vietqr.io/image/MB-0987654321-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(addInfo)}&accountName=PICKLEBALL%20CLUB`;
         setQrUrl(url);
-        setBookingPayload({
-            userId: currentUser.id,
-            courtId: selectedCourt.id,
-            bookDate,
-            timeSlot
-        });
+        setBookingPayload({ userId: currentUser.id, courtId: selectedCourt.id, bookDate, timeSlot });
         setShowQR(true);
     };
 
-    // =====================================
-    // BƯỚC 2: KHÁCH XÁC NHẬN ĐÃ CHUYỂN KHOẢN -> GỌI API LƯU DB
-    // =====================================
     const handleConfirmPayment = async () => {
-        setShowQR(false); // Đóng pop-up QR
-        
+        setShowQR(false);
         const res = await fetch('/api/bookings', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(bookingPayload)
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bookingPayload)
         });
-        
-        const data = await res.json();
         if (res.ok) {
             alert('🎉 Thanh toán thành công! Chúng tôi đã gửi biên lai về Email của bạn.');
             setSelectedCourt(null); setBookDate(''); setTimeSlot(''); setBookingPayload(null);
-            fetchHistory(); // Load lại lịch sử
-        } else {
-            alert(data.error);
-        }
+            fetchHistory();
+        } else alert((await res.json()).error);
     };
 
     return (
-        <div style={{ backgroundColor: '#f4f6f8', minHeight: '100vh', fontFamily: 'Arial, sans-serif' }}>
-            <nav style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 40px', backgroundColor: '#27ae60', color: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                <h2 style={{ margin: 0 }}>🎾 Pickleball Club</h2>
+        <div className="min-h-screen bg-slate-50 font-sans text-slate-800 pb-20">
+            
+            {/* TASK 1: REFACTOR NAVBAR */}
+            <nav className="flex justify-between items-center px-6 md:px-10 py-4 bg-slate-900 text-white shadow-lg sticky top-0 z-40">
+                <h2 className="text-2xl font-bold tracking-tight">🎾 Pickleball Club</h2>
                 <div>
                     {currentUser ? (
-                        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-                            <span>Xin chào, <strong>{currentUser.name}</strong></span>
-                            <button onClick={handleLogout} style={{ padding: '8px 15px', backgroundColor: 'transparent', border: '1px solid white', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Đăng xuất</button>
+                        <div className="flex items-center gap-4">
+                            <span className="hidden md:inline text-slate-300">Xin chào, <strong className="font-semibold text-white">{currentUser.name}</strong></span>
+                            <button onClick={handleLogout} className="px-4 py-2 text-sm font-medium border border-slate-600 rounded-lg hover:bg-slate-800 transition-colors">Đăng xuất</button>
                         </div>
                     ) : (
-                        <Link to="/admin" style={{ color: 'white', textDecoration: 'none', fontWeight: 'bold' }}>🔑 Dành cho Admin</Link>
+                        <Link to="/admin" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">🔑 Dành cho Admin</Link>
                     )}
                 </div>
             </nav>
 
-            <div style={{ padding: '40px', maxWidth: '1000px', margin: '0 auto' }}>
-                
+            {/* TASK 2: HERO BANNER SECTION */}
+            {!currentUser && (
+                <section className="bg-linear-to-br from-slate-800 to-blue-900 text-white py-20 px-6 text-center shadow-inner">
+                    <h1 className="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight">Trải nghiệm đặt sân Pickleball siêu tốc</h1>
+                    <p className="text-lg md:text-xl text-blue-200 mb-8 max-w-2xl mx-auto">Hệ thống thông minh giúp bạn tra cứu giờ trống, đặt sân và thanh toán tự động chỉ trong vài giây.</p>
+                    <div className="inline-block bg-blue-600 text-white font-bold py-2 px-6 rounded-full text-sm shadow-lg shadow-blue-900/50">
+                        Tham gia cộng đồng ngay hôm nay
+                    </div>
+                </section>
+            )}
+
+            <div className="max-w-6xl mx-auto px-4 mt-10">
                 {!currentUser ? (
-                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '50px' }}>
-                        <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '10px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', width: '400px' }}>
-                            <h2 style={{ textAlign: 'center', color: '#2c3e50', marginBottom: '10px' }}>
-                                {authMode === 'login' ? 'Đăng nhập Khách hàng' : 'Đăng ký Tài khoản'}
+                    
+                    /* TASK 3: REFACTOR AUTH CARD */
+                    <div className="flex justify-center mt-10">
+                        <div className="bg-white p-8 md:p-10 rounded-2xl shadow-2xl w-full max-w-md mx-auto border border-slate-100 transform transition-all">
+                            <h2 className="text-3xl font-bold text-center text-slate-800 mb-2">
+                                {authMode === 'login' ? 'Đăng nhập' : 'Tạo tài khoản'}
                             </h2>
-                            <p style={{ textAlign: 'center', color: '#7f8c8d', marginBottom: '30px' }}>Trải nghiệm đặt sân Pickleball siêu tốc</p>
+                            <p className="text-center text-slate-500 mb-8">Vui lòng điền thông tin của bạn</p>
                             
-                            <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                            <form onSubmit={handleAuth} className="flex flex-col gap-5">
                                 {authMode === 'register' && (
                                     <>
-                                        <input type="text" placeholder="Họ và Tên" required value={authForm.name} onChange={e => setAuthForm({...authForm, name: e.target.value})} style={{ padding: '12px', borderRadius: '5px', border: '1px solid #ccc' }} />
-                                        <input type="text" placeholder="Số điện thoại" required value={authForm.phone} onChange={e => setAuthForm({...authForm, phone: e.target.value})} style={{ padding: '12px', borderRadius: '5px', border: '1px solid #ccc' }} />
+                                        <input type="text" placeholder="Họ và Tên" required value={authForm.name} onChange={e => setAuthForm({...authForm, name: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
+                                        <input type="text" placeholder="Số điện thoại" required value={authForm.phone} onChange={e => setAuthForm({...authForm, phone: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
                                     </>
                                 )}
-                                <input type="email" placeholder="Email của bạn" required value={authForm.email} onChange={e => setAuthForm({...authForm, email: e.target.value})} style={{ padding: '12px', borderRadius: '5px', border: '1px solid #ccc' }} />
-                                <input type="password" placeholder="Mật khẩu" required value={authForm.password} onChange={e => setAuthForm({...authForm, password: e.target.value})} style={{ padding: '12px', borderRadius: '5px', border: '1px solid #ccc' }} />
+                                <input type="email" placeholder="Email của bạn" required value={authForm.email} onChange={e => setAuthForm({...authForm, email: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
+                                <input type="password" placeholder="Mật khẩu" required value={authForm.password} onChange={e => setAuthForm({...authForm, password: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
                                 
-                                <button type="submit" style={{ padding: '15px', backgroundColor: '#27ae60', color: 'white', border: 'none', borderRadius: '5px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', marginTop: '10px' }}>
+                                <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors shadow-md shadow-blue-500/30 mt-2">
                                     {authMode === 'login' ? 'ĐĂNG NHẬP' : 'TẠO TÀI KHOẢN'}
                                 </button>
                             </form>
                             
-                            <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '14px' }}>
+                            <p className="text-center mt-6 text-sm text-slate-600">
                                 {authMode === 'login' ? 'Chưa có tài khoản? ' : 'Đã có tài khoản? '}
-                                <span style={{ color: '#2980b9', cursor: 'pointer', fontWeight: 'bold' }} onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}>
+                                <button onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')} className="text-blue-600 font-bold hover:underline">
                                     {authMode === 'login' ? 'Đăng ký ngay' : 'Đăng nhập'}
-                                </span>
+                                </button>
                             </p>
                         </div>
                     </div>
                 ) : (
-                    <div>
-                        <h2 style={{ color: '#27ae60', borderBottom: '3px solid #27ae60', display: 'inline-block', paddingBottom: '5px' }}>📍 Danh sách sân hôm nay</h2>
+                    <div className="animate-fade-in-up">
+                        <div className="flex items-center gap-3 mb-6">
+                            <h2 className="text-2xl font-bold text-slate-800 border-l-4 border-blue-600 pl-3">Danh sách sân hôm nay</h2>
+                        </div>
                         
-                        <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginBottom: '50px', marginTop: '20px' }}>
+                        {/* TASK 4: REFACTOR COURT CARDS */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
                             {courts.map(court => (
-                                <div key={court.id} style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', minWidth: '250px', borderTop: '4px solid #3498db' }}>
-                                    <h3 style={{ margin: '0 0 10px 0', color: '#2c3e50' }}>{court.name}</h3>
-                                    <p style={{ margin: '5px 0', color: '#7f8c8d' }}>📍 {court.location}</p>
-                                    <p style={{ margin: '5px 0', color: '#e67e22', fontWeight: 'bold' }}>💰 {court.pricePerHour.toLocaleString('vi-VN')} đ/giờ</p>
-                                    <button 
-                                        onClick={() => setSelectedCourt(court)}
-                                        style={{ width: '100%', padding: '10px', marginTop: '15px', backgroundColor: '#3498db', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-                                    >
-                                        CHỌN SÂN NÀY
+                                <div key={court.id} className="bg-white rounded-xl shadow-md border-t-4 border-blue-500 p-6 hover:shadow-lg transition-shadow relative overflow-hidden group">
+                                    <h3 className="text-xl font-bold text-slate-800 mb-2">{court.name}</h3>
+                                    <p className="text-slate-500 text-sm mb-2 flex items-center gap-2">
+                                        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                        {court.location}
+                                    </p>
+                                    <p className="text-blue-600 font-extrabold text-lg mb-6">{court.pricePerHour.toLocaleString('vi-VN')} đ/giờ</p>
+                                    <button onClick={() => setSelectedCourt(court)} className="w-full py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors">
+                                        ĐẶT SÂN NÀY
                                     </button>
                                 </div>
                             ))}
                         </div>
 
+                        {/* TASK 5: REFACTOR BOOKING FORM */}
                         {selectedCourt && (
-                            <div style={{ backgroundColor: '#fffbe6', padding: '25px', borderRadius: '8px', border: '2px dashed #f1c40f', marginBottom: '50px' }}>
-                                <h3 style={{ marginTop: 0, color: '#d35400' }}>Tạo lịch đặt: {selectedCourt.name}</h3>
-                                {/* Đổi hàm onSubmit từ handleBookCourt thành handleInitBooking */}
-                                <form onSubmit={handleInitBooking} style={{ display: 'flex', gap: '15px', alignItems: 'flex-end' }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                                        <label style={{ fontWeight: 'bold', marginBottom: '5px' }}>Ngày chơi:</label>
-                                        <input type="date" required value={bookDate} onChange={e => setBookDate(e.target.value)} style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ccc' }} />
+                            <div className="bg-white rounded-xl shadow-md border border-slate-200 p-6 md:p-8 mb-12 animate-fade-in-up">
+                                <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+                                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    Tạo lịch đặt: {selectedCourt.name}
+                                </h3>
+                                <form onSubmit={handleInitBooking} className="flex flex-wrap gap-4 items-end">
+                                    <div className="flex flex-col w-full md:w-64">
+                                        <label className="text-sm font-semibold text-slate-600 mb-2">Ngày chơi:</label>
+                                        <input type="date" required value={bookDate} onChange={e => setBookDate(e.target.value)} className="px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-full bg-slate-50" />
                                     </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                                        <label style={{ fontWeight: 'bold', marginBottom: '5px' }}>Khung giờ:</label>
-                                        <select required value={timeSlot} onChange={e => setTimeSlot(e.target.value)} style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ccc' }}>
+                                    <div className="flex flex-col w-full md:w-64">
+                                        <label className="text-sm font-semibold text-slate-600 mb-2">Khung giờ:</label>
+                                        <select required value={timeSlot} onChange={e => setTimeSlot(e.target.value)} className="px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-full bg-slate-50">
                                             <option value="" disabled>-- Chọn giờ --</option>
                                             {TIME_SLOTS.map(slot => {
                                                 const isBooked = bookedSlots.includes(slot);
                                                 return (
-                                                    <option key={slot} value={slot} disabled={isBooked} style={isBooked ? { color: 'red', textDecoration: 'line-through' } : {}}>
+                                                    <option key={slot} value={slot} disabled={isBooked} className={isBooked ? 'text-red-400 line-through' : 'text-slate-800'}>
                                                         {slot} {isBooked ? '(Đã có người đặt)' : ''}
                                                     </option>
                                                 );
                                             })}
                                         </select>
                                     </div>
-                                    <button type="submit" style={{ padding: '10px 25px', backgroundColor: '#e67e22', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', height: '40px' }}>THANH TOÁN & ĐẶT SÂN</button>
-                                    <button type="button" onClick={() => setSelectedCourt(null)} style={{ padding: '10px 25px', backgroundColor: '#95a5a6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', height: '40px' }}>HỦY BỎ</button>
+                                    <div className="flex gap-3 w-full md:w-auto mt-2 md:mt-0">
+                                        <button type="submit" className="flex-1 md:flex-none px-6 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-md shadow-blue-500/30">
+                                            THANH TOÁN
+                                        </button>
+                                        <button type="button" onClick={() => setSelectedCourt(null)} className="px-6 py-3 bg-slate-400 text-white rounded-lg font-bold hover:bg-slate-500 transition-colors">
+                                            HỦY
+                                        </button>
+                                    </div>
                                 </form>
                             </div>
                         )}
 
-                        <h2 style={{ color: '#8e44ad', borderBottom: '3px solid #8e44ad', display: 'inline-block', paddingBottom: '5px' }}>🕒 Lịch sử đặt sân của tôi</h2>
+                        <div className="flex items-center gap-3 mb-6 mt-8">
+                            <h2 className="text-2xl font-bold text-slate-800 border-l-4 border-slate-600 pl-3">Lịch sử đặt sân</h2>
+                        </div>
+                        
+                        {/* TASK 6: REFACTOR HISTORY TABLE */}
                         {history.length === 0 ? (
-                            <p style={{ color: '#7f8c8d' }}>Bạn chưa có lịch đặt nào.</p>
+                            <div className="bg-white p-8 rounded-2xl text-center border border-dashed border-slate-300">
+                                <p className="text-slate-500">Bạn chưa có lịch đặt nào.</p>
+                            </div>
                         ) : (
-                            <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-                                <thead>
-                                    <tr style={{ backgroundColor: '#8e44ad', color: 'white', textAlign: 'left' }}>
-                                        <th style={{ padding: '15px' }}>Mã vé</th>
-                                        <th style={{ padding: '15px' }}>Sân</th>
-                                        <th style={{ padding: '15px' }}>Ngày chơi</th>
-                                        <th style={{ padding: '15px' }}>Khung giờ</th>
-                                        <th style={{ padding: '15px' }}>Trạng thái</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {history.map(b => (
-                                        <tr key={b.id} style={{ borderBottom: '1px solid #eee' }}>
-                                            <td style={{ padding: '15px', fontWeight: 'bold' }}>#{b.id}</td>
-                                            <td style={{ padding: '15px' }}>{b.court?.name}</td>
-                                            <td style={{ padding: '15px' }}>{b.bookDate}</td>
-                                            <td style={{ padding: '15px', color: '#d35400', fontWeight: 'bold' }}>{b.timeSlot}</td>
-                                            <td style={{ padding: '15px', color: '#27ae60', fontWeight: 'bold' }}>Đã xác nhận ✔️</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-10">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead className="bg-slate-700 text-white">
+                                            <tr>
+                                                <th className="px-6 py-4 text-left text-sm uppercase tracking-wider font-semibold">Mã vé</th>
+                                                <th className="px-6 py-4 text-left text-sm uppercase tracking-wider font-semibold">Sân</th>
+                                                <th className="px-6 py-4 text-left text-sm uppercase tracking-wider font-semibold">Ngày chơi</th>
+                                                <th className="px-6 py-4 text-left text-sm uppercase tracking-wider font-semibold">Khung giờ</th>
+                                                <th className="px-6 py-4 text-left text-sm uppercase tracking-wider font-semibold">Trạng thái</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {history.map(b => (
+                                                <tr key={b.id} className="hover:bg-slate-50 transition-colors">
+                                                    <td className="px-6 py-4 font-bold text-slate-700">#{b.id}</td>
+                                                    <td className="px-6 py-4 font-medium text-slate-900">{b.court?.name}</td>
+                                                    <td className="px-6 py-4 text-slate-600">{b.bookDate}</td>
+                                                    <td className="px-6 py-4 font-bold text-blue-600">{b.timeSlot}</td>
+                                                    <td className="px-6 py-4">
+                                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200">
+                                                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                                                            Đã xác nhận
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         )}
                     </div>
                 )}
             </div>
 
-            {/* =====================================
-                MODAL (POP-UP) HIỂN THỊ MÃ QR THANH TOÁN
-                ===================================== */}
+            {/* TASK 7: REFACTOR QR MODAL */}
             {showQR && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-                    <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '10px', textAlign: 'center', width: '350px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-                        <h3 style={{ marginTop: 0, color: '#2980b9' }}>Quét mã để thanh toán</h3>
-                        <p style={{ color: '#7f8c8d', fontSize: '14px', marginBottom: '20px' }}>Sử dụng App ngân hàng hoặc Momo để quét</p>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm text-center transform transition-all scale-100">
+                        <h3 className="text-2xl font-bold text-slate-800 mb-2">Quét mã thanh toán</h3>
+                        <p className="text-slate-500 text-sm mb-6">Sử dụng App ngân hàng hoặc Momo để quét</p>
                         
-                        {/* Ảnh QR Code tự động sinh ra từ VietQR */}
-                        <div style={{ border: '2px solid #3498db', padding: '10px', borderRadius: '8px', display: 'inline-block', marginBottom: '20px' }}>
-                            <img src={qrUrl} alt="QR Code Thanh Toán" style={{ width: '250px', height: '250px', objectFit: 'contain' }} />
+                        <div className="border border-slate-200 p-3 rounded-xl inline-block mb-6 bg-slate-50 shadow-inner">
+                            <img src={qrUrl} alt="QR Code" className="w-56 h-56 object-contain rounded-lg" />
                         </div>
                         
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            <button onClick={handleConfirmPayment} style={{ padding: '12px', backgroundColor: '#27ae60', color: 'white', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer', fontSize: '15px' }}>
+                        <div className="flex flex-col gap-3">
+                            <button onClick={handleConfirmPayment} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg transition-colors shadow-md shadow-emerald-600/30">
                                 ✅ TÔI ĐÃ CHUYỂN KHOẢN
                             </button>
-                            <button onClick={() => setShowQR(false)} style={{ padding: '12px', backgroundColor: '#e74c3c', color: 'white', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer', fontSize: '15px' }}>
+                            <button onClick={() => setShowQR(false)} className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-lg transition-colors shadow-md shadow-red-500/30">
                                 ❌ HỦY GIAO DỊCH
                             </button>
                         </div>
                     </div>
                 </div>
             )}
-            
         </div>
     );
 }
