@@ -23,19 +23,32 @@ export default function BookingModal({
     const [promoCode, setPromoCode] = useState('');
     const [discountAmount, setDiscountAmount] = useState(0);
 
-    // Hàm xử lý áp mã
-    const handleApplyPromo = () => {
+    // 👉 Hàm xử lý áp mã thật từ Database
+    const handleApplyPromo = async () => {
         const code = promoCode.trim().toUpperCase();
-        if (code === 'GIAM20K') {
-            setDiscountAmount(20000);
-            toast.success(' Áp dụng mã GIAM20K thành công!');
-        } else if (code === 'VIP10') {
-            const discount = selectedCourt.pricePerHour * 0.1; // Giảm 10%
-            setDiscountAmount(discount);
-            toast.success(' Áp dụng mã VIP10 giảm 10%!');
-        } else {
-            setDiscountAmount(0);
-            toast.error(' Mã giảm giá không hợp lệ hoặc đã hết hạn!');
+        if (!code) return toast.error('Vui lòng nhập mã giảm giá!');
+
+        try {
+            // Gọi API kiểm tra mã dưới Database
+            const res = await fetch(`/api/promos?code=${code}`);
+            const data = await res.json();
+
+            if (!res.ok) {
+                setDiscountAmount(0);
+                return toast.error(data.error || 'Mã không hợp lệ hoặc đã hết hạn');
+            }
+
+            // Tính toán dựa trên dữ liệu thật
+            if (data.isPercent) {
+                const discount = (selectedCourt.pricePerHour * data.discount) / 100;
+                setDiscountAmount(discount);
+                toast.success(`✅ Áp dụng thành công! Giảm ${data.discount}%`);
+            } else {
+                setDiscountAmount(data.discount);
+                toast.success(`✅ Áp dụng thành công! Giảm ${data.discount.toLocaleString('vi-VN')}đ`);
+            }
+        } catch (error) {
+            toast.error('Lỗi khi kiểm tra mã');
         }
     };
 

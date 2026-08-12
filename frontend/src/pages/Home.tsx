@@ -200,6 +200,8 @@ export default function Home() {
                     viewCourt={viewCourt}
                     setViewCourt={setViewCourt}
                     setSelectedCourt={setSelectedCourt}
+                    currentUser={currentUser}    
+                    refreshCourts={fetchCourts}
                 />
             )}
 

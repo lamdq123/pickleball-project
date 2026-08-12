@@ -1,5 +1,4 @@
-interface Court { id: number; name: string; location: string; pricePerHour: number; imageUrl?: string; }
-
+interface Court { id: number; name: string; location: string; pricePerHour: number; imageUrl?: string; reviews?: any[]; }
 interface CourtCardProps {
     court: Court;
     setViewCourt: (court: Court) => void;
@@ -8,10 +7,15 @@ interface CourtCardProps {
 
 export default function CourtCard({ court, setViewCourt, setSelectedCourt }: CourtCardProps) {
     const DEFAULT_COURT_IMG = "https://images.unsplash.com/photo-1622279457486-69d73ad5e4d2?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80";
-    
+
     // Thuật toán Đánh giá giả lập (Rating)
-    const mockRating = (court.id % 5 === 0) ? "5.0" : (4.5 + (court.id % 5) * 0.1).toFixed(1);
-    const mockReviews = 50 + (court.id * 17) % 200;
+    // 👉 Thuật toán Đánh giá thật (Real Rating)
+    const reviews = court.reviews || [];
+    const totalReviews = reviews.length;
+    // Tính trung bình cộng số sao, nếu chưa có ai đánh giá thì mặc định hiển thị 5.0
+    const realRating = totalReviews > 0
+        ? (reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews).toFixed(1)
+        : "5.0";
 
     return (
         <div className="bg-white rounded-xl shadow-md border border-slate-100 p-5 hover:shadow-xl transition-shadow flex flex-col justify-between group">
@@ -19,20 +23,20 @@ export default function CourtCard({ court, setViewCourt, setSelectedCourt }: Cou
                 <div className="h-40 bg-slate-200 rounded-lg mb-4 overflow-hidden relative">
                     <img src={court.imageUrl || DEFAULT_COURT_IMG} alt={court.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded text-xs font-bold text-white flex items-center gap-1">
-                        <span className="text-amber-400">★</span> {mockRating}
+                        <span className="text-amber-400">★</span> {realRating}
                     </div>
                 </div>
                 <h3 className="text-xl font-bold text-slate-800 mb-1 line-clamp-1">{court.name}</h3>
-                
+
                 {/* Hiển thị số sao */}
                 <div className="flex items-center gap-2 mb-3">
                     <div className="flex text-amber-400 text-sm">★★★★★</div>
-                    <span className="text-slate-500 text-xs font-medium">({mockReviews} nhận xét)</span>
+                    <span className="text-slate-500 text-xs font-medium">({totalReviews} nhận xét)</span>
                 </div>
 
                 <p className="text-slate-500 text-sm mb-4 flex items-center gap-1 line-clamp-1">📍 {court.location}</p>
             </div>
-            
+
             <div>
                 <p className="text-blue-600 font-extrabold text-lg mb-4">{court.pricePerHour.toLocaleString('vi-VN')} đ <span className="text-sm text-slate-500 font-normal">/giờ</span></p>
                 <div className="flex gap-2">

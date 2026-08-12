@@ -10,7 +10,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // ==========================================
     if (req.method === 'GET') {
         try {
-            const courts = await prisma.court.findMany();
+            const courts = await prisma.court.findMany({
+                include: {
+                    reviews: true // 👉 Bổ sung dòng này: Kéo theo toàn bộ bài đánh giá để Frontend tự tính trung bình sao
+                }
+            });
             return res.status(200).json(courts);
         } catch (error) {
             return res.status(500).json({ error: 'Có lỗi xảy ra khi lấy danh sách sân' });
