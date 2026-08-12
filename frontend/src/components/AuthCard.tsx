@@ -2,7 +2,7 @@ import { type FormEvent } from 'react';
 
 interface AuthCardProps {
     authMode: 'login' | 'register';
-    authForm: { name: string; email: string; phone: string; password: '' };
+    authForm: { name: string; email: string; phone: string; password: string };
     setAuthMode: (mode: 'login' | 'register') => void;
     setAuthForm: (form: any) => void;
     onSubmit: (e: FormEvent) => void;
