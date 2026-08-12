@@ -8,14 +8,15 @@ generator client {
 }
 
 model User {
-  id        Int       @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   name      String
-  email     String    @unique
+  email     String   @unique
   phone     String?
-  password  String    @default("123456")
-  createdAt DateTime  @default(now())
-  bookings  Booking[] // Thêm dòng này: 1 User có thể có nhiều Booking
+  password  String
+  role      String   @default("customer") // 👉 Thêm dòng này: "admin" hoặc "customer"
+  bookings  Booking[]
   reviews   Review[]
+  createdAt DateTime @default(now())
 }
 
 model Court {

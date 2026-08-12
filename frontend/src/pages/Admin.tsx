@@ -21,9 +21,14 @@ function Admin() {
     const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'courts' | 'users' | 'promos' | 'reviews'>('dashboard');
 
     useEffect(() => {
+        // Lấy thông tin user đang lưu ở localStorage (khi đăng nhập em nhớ lưu kèm role nhé)
+        const userInfo = JSON.parse(localStorage.getItem('customer_info') || 'null');
         const token = localStorage.getItem('admin_token');
-        if (!token) {
-            navigate('/login');
+
+        // Kiểm tra xem có phải token admin hoặc user có role === 'admin' không
+        if (!token || (userInfo && userInfo.role !== 'admin')) {
+            toast.error("Bạn không có quyền truy cập trang quản trị!");
+            navigate('/'); // 👉 Đá thẳng về trang chủ nếu không phải admin
         } else {
             fetchCourts();
             fetchUsers();

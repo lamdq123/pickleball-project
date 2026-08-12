@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Home from './pages/Home';
 import Admin from './pages/Admin';
@@ -34,12 +34,6 @@ function App() {
     <BrowserRouter>
       <Toaster position="top-right" reverseOrder={false} />
       <div style={{ fontFamily: 'Arial, sans-serif' }}>
-
-        <nav style={{ backgroundColor: '#2c3e50', padding: '15px', display: 'flex', gap: '20px', alignItems: 'center' }}>
-          <Link to="/" style={{ color: 'white', textDecoration: 'none', fontWeight: 'bold' }}>Trang Chủ</Link>
-          <Link to="/admin" style={{ color: '#f1c40f', textDecoration: 'none', fontWeight: 'bold' }}>Trang Quản Trị</Link>
-        </nav>
-
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
