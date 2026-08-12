@@ -2,6 +2,8 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import toast from 'react-hot-toast';
+import AdminPromos from '../components/admin/AdminPromos';
+import AdminReviews from '../components/admin/AdminReviews';
 interface Court { id: number; name: string; location: string; pricePerHour: number; imageUrl?: string; }
 interface User { id: number; name: string; email: string; phone: string; }
 interface Booking { id: number; court: Court; user: User; bookDate: string; timeSlot: string; }
@@ -16,7 +18,7 @@ function Admin() {
     const [userFormData, setUserFormData] = useState({ name: '', email: '', phone: '', password: '' });
 
     // State quản lý Tab đang hiển thị
-    const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'courts' | 'users'>('dashboard');
+    const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'courts' | 'users' | 'promos' | 'reviews'>('dashboard');
 
     useEffect(() => {
         const token = localStorage.getItem('admin_token');
@@ -189,6 +191,19 @@ function Admin() {
                                     <p className="text-3xl font-extrabold text-slate-800 mt-1">{totalUsers} <span className="text-lg text-slate-500 font-medium">người</span></p>
                                 </div>
                             </div>
+                            <button
+                                onClick={() => setActiveTab('promos')}
+                                className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'promos' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}
+                            >
+                                🎟 Mã giảm giá
+                            </button>
+
+                            <button
+                                onClick={() => setActiveTab('reviews')}
+                                className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'reviews' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}
+                            >
+                                ⭐ Đánh giá
+                            </button>
                         </div>
 
                         {/* 2 Biểu đồ Thống kê */}
@@ -367,6 +382,8 @@ function Admin() {
                         </div>
                     </div>
                 )}
+                {activeTab === 'promos' && <AdminPromos />}
+                {activeTab === 'reviews' && <AdminReviews />}
             </main>
         </div>
     );
