@@ -158,6 +158,19 @@ function Admin() {
                 <button onClick={() => setActiveTab('bookings')} className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'bookings' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>📅 Lịch đặt sân</button>
                 <button onClick={() => setActiveTab('courts')} className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'courts' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>🏟 Quản lý sân</button>
                 <button onClick={() => setActiveTab('users')} className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'users' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>👥 Khách hàng</button>
+                <button
+                    onClick={() => setActiveTab('promos')}
+                    className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'promos' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}
+                >
+                    🎟 Mã giảm giá
+                </button>
+
+                <button
+                    onClick={() => setActiveTab('reviews')}
+                    className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'reviews' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}
+                >
+                    ⭐ Đánh giá
+                </button>
             </div>
 
             {/* Main Content */}
@@ -191,19 +204,6 @@ function Admin() {
                                     <p className="text-3xl font-extrabold text-slate-800 mt-1">{totalUsers} <span className="text-lg text-slate-500 font-medium">người</span></p>
                                 </div>
                             </div>
-                            <button
-                                onClick={() => setActiveTab('promos')}
-                                className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'promos' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}
-                            >
-                                🎟 Mã giảm giá
-                            </button>
-
-                            <button
-                                onClick={() => setActiveTab('reviews')}
-                                className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'reviews' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}
-                            >
-                                ⭐ Đánh giá
-                            </button>
                         </div>
 
                         {/* 2 Biểu đồ Thống kê */}
