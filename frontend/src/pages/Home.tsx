@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 // Nhập các mảnh ghép Component
-import Navbar from '../components/Navbar';
-import AuthCard from '../components/AuthCard';
-import CourtModal from '../components/CourtModal';
-import QRModal from '../components/QRModal';
-import CourtFilter from '../components/CourtFilter';
-import CourtCard from '../components/CourtCard';
-import BookingModal from '../components/BookingModal';
+import Navbar from '../components/client/Navbar';
+import AuthCard from '../components/client/AuthCard';
+import CourtModal from '../components/client/CourtModal';
+import QRModal from '../components/client/QRModal';
+import CourtFilter from '../components/client/CourtFilter';
+import CourtCard from '../components/client/CourtCard';
+import BookingModal from '../components/client/BookingModal';
 interface Court { id: number; name: string; location: string; pricePerHour: number; imageUrl?: string; }
 
 export default function Home() {
