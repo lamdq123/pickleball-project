@@ -1,8 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 interface Court { id: number; name: string; location: string; pricePerHour: number; imageUrl?: string; }
-
+import Navbar from '../components/Navbar';
+import AuthCard from '../components/AuthCard';
+import CourtModal from '../components/CourtModal';
 function Home() {
 
     const [courts, setCourts] = useState<Court[]>([]);
@@ -10,7 +11,6 @@ function Home() {
     const [currentUser, setCurrentUser] = useState<any>(JSON.parse(localStorage.getItem('customer_info') || 'null'));
     const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
     const [authForm, setAuthForm] = useState({ name: '', email: '', phone: '', password: '' });
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     // 👉 State quản lý luồng Đặt sân & Xem chi tiết
     const [selectedCourt, setSelectedCourt] = useState<Court | null>(null); // Sân đang chọn để Đặt giờ
     const [viewCourt, setViewCourt] = useState<Court | null>(null);         // Sân đang bật Pop-up xem chi tiết
@@ -100,59 +100,7 @@ function Home() {
         <div className="min-h-screen bg-slate-50 font-sans text-slate-800 pb-20">
             {/* NAVBAR */}
             {/* NAVBAR (ĐÃ TÍCH HỢP MOBILE MENU) */}
-            <nav className="bg-slate-900 text-white shadow-lg sticky top-0 z-30">
-                <div className="flex justify-between items-center px-6 md:px-10 py-4">
-                    <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-                        <span className="text-emerald-400">🎾</span> Pickleball Club
-                    </h2>
-
-                    {/* Nút Hamburger (Chỉ hiện trên Mobile) */}
-                    <div className="md:hidden">
-                        <button
-                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="text-slate-300 hover:text-white focus:outline-none transition-colors"
-                        >
-                            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                {isMobileMenuOpen ? (
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                                ) : (
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-                                )}
-                            </svg>
-                        </button>
-                    </div>
-
-                    {/* Menu Desktop (Ẩn trên Mobile) */}
-                    <div className="hidden md:flex items-center gap-4">
-                        {currentUser ? (
-                            <>
-                                <Link to="/profile" className="text-slate-300 hover:text-emerald-400 transition-colors cursor-pointer">
-                                    Xin chào, <strong className="font-semibold text-white">{currentUser.name}</strong>
-                                </Link>
-                                <button onClick={handleLogout} className="px-4 py-2 text-sm font-medium border border-slate-600 rounded-lg hover:bg-slate-800 transition-colors">Đăng xuất</button>
-                            </>
-                        ) : (
-                            <Link to="/admin" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">🔑 Dành cho Admin</Link>
-                        )}
-                    </div>
-                </div>
-
-                {/* Dropdown Menu thả xuống (Chỉ hiện trên Mobile khi bấm nút) */}
-                {isMobileMenuOpen && (
-                    <div className="md:hidden bg-slate-800 border-t border-slate-700 px-6 py-4 flex flex-col gap-4 animate-fade-in">
-                        {currentUser ? (
-                            <>
-                                <Link to="/profile" className="text-slate-300 hover:text-emerald-400 transition-colors text-lg">
-                                    👤 Hồ sơ: <strong className="text-white">{currentUser.name}</strong>
-                                </Link>
-                                <button onClick={handleLogout} className="w-full text-left text-red-400 font-medium py-2 hover:text-red-300 text-lg">Đăng xuất</button>
-                            </>
-                        ) : (
-                            <Link to="/admin" className="text-slate-300 hover:text-white font-medium py-2 text-lg">🔑 Dành cho Admin</Link>
-                        )}
-                    </div>
-                )}
-            </nav>
+            <Navbar currentUser={currentUser} onLogout={handleLogout} />
 
             {/* HERO BANNER SECTION */}
             {!currentUser && (
@@ -168,36 +116,13 @@ function Home() {
             <div className="max-w-6xl mx-auto px-4 mt-10">
                 {!currentUser ? (
                     /* FORM ĐĂNG NHẬP / ĐĂNG KÝ */
-                    <div className="flex justify-center mt-10">
-                        <div className="bg-white p-8 md:p-10 rounded-2xl shadow-2xl w-full max-w-md mx-auto border border-slate-100 transform transition-all">
-                            <h2 className="text-3xl font-bold text-center text-slate-800 mb-2">
-                                {authMode === 'login' ? 'Đăng nhập' : 'Tạo tài khoản'}
-                            </h2>
-                            <p className="text-center text-slate-500 mb-8">Vui lòng điền thông tin của bạn</p>
-
-                            <form onSubmit={handleAuth} className="flex flex-col gap-5">
-                                {authMode === 'register' && (
-                                    <>
-                                        <input type="text" placeholder="Họ và Tên" required value={authForm.name} onChange={e => setAuthForm({ ...authForm, name: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
-                                        <input type="text" placeholder="Số điện thoại" required value={authForm.phone} onChange={e => setAuthForm({ ...authForm, phone: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
-                                    </>
-                                )}
-                                <input type="email" placeholder="Email của bạn" required value={authForm.email} onChange={e => setAuthForm({ ...authForm, email: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
-                                <input type="password" placeholder="Mật khẩu" required value={authForm.password} onChange={e => setAuthForm({ ...authForm, password: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
-
-                                <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors shadow-md shadow-blue-500/30 mt-2">
-                                    {authMode === 'login' ? 'ĐĂNG NHẬP' : 'TẠO TÀI KHOẢN'}
-                                </button>
-                            </form>
-
-                            <p className="text-center mt-6 text-sm text-slate-600">
-                                {authMode === 'login' ? 'Chưa có tài khoản? ' : 'Đã có tài khoản? '}
-                                <button onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')} className="text-blue-600 font-bold hover:underline">
-                                    {authMode === 'login' ? 'Đăng ký ngay' : 'Đăng nhập'}
-                                </button>
-                            </p>
-                        </div>
-                    </div>
+                    <AuthCard
+                        authMode={authMode}
+                        authForm={authForm}
+                        setAuthMode={setAuthMode}
+                        setAuthForm={setAuthForm}
+                        onSubmit={handleAuth}
+                    />
                 ) : (
                     <div className="animate-fade-in-up">
 
@@ -279,61 +204,11 @@ function Home() {
                 MODAL XEM CHI TIẾT SÂN (COURT DETAIL)
             ========================================= */}
             {viewCourt && (
-                <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-                    <div className="bg-white rounded-2xl w-full max-w-3xl overflow-hidden flex flex-col md:flex-row shadow-2xl transform scale-100 transition-all">
-
-                        {/* Ảnh Sân (Bên trái) */}
-                        <div className="w-full md:w-1/2 h-64 md:h-auto bg-slate-200 relative">
-                            <img src={viewCourt.imageUrl || DEFAULT_COURT_IMG} alt={viewCourt.name} className="w-full h-full object-cover" />
-                            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-sm font-bold text-blue-600 shadow">
-                                Phổ biến nhất
-                            </div>
-                        </div>
-
-                        {/* Thông tin Sân (Bên phải) */}
-                        <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col justify-between bg-white">
-                            <div>
-                                <div className="flex justify-between items-start mb-2">
-                                    <h2 className="text-2xl font-bold text-slate-800">{viewCourt.name}</h2>
-                                    <button onClick={() => setViewCourt(null)} className="text-slate-400 hover:text-red-500 transition-colors bg-slate-100 hover:bg-red-50 rounded-full p-2">
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                    </button>
-                                </div>
-                                <p className="text-slate-500 mb-6 flex items-center gap-1">📍 {viewCourt.location}</p>
-
-                                {/* Badges Tiện ích ảo */}
-                                <div className="flex flex-wrap gap-2 mb-6">
-                                    <span className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-semibold border border-blue-100 flex items-center gap-1">✨ Sân thảm chuẩn thi đấu</span>
-                                    <span className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 flex items-center gap-1">💡 Đèn LED ban đêm</span>
-                                    <span className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 flex items-center gap-1">🥤 Có bán nước & bóng</span>
-                                    <span className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 flex items-center gap-1">🚗 Đỗ xe ô tô miễn phí</span>
-                                </div>
-
-                                <p className="text-slate-600 text-sm leading-relaxed mb-6">
-                                    Trải nghiệm không gian thể thao đẳng cấp với mặt sân chống trơn trượt đạt chuẩn quốc tế. Không gian rộng rãi, thoáng mát, cực kỳ phù hợp cho cả tập luyện nghiệp dư lẫn thi đấu.
-                                </p>
-                            </div>
-
-                            <div className="pt-6 border-t border-slate-100 mt-auto">
-                                <div className="flex items-end justify-between mb-4">
-                                    <span className="text-slate-500 font-medium">Giá thuê:</span>
-                                    <span className="text-2xl font-extrabold text-blue-600">{viewCourt.pricePerHour.toLocaleString('vi-VN')}đ<span className="text-sm font-normal text-slate-500">/giờ</span></span>
-                                </div>
-                                <button
-                                    onClick={() => {
-                                        setSelectedCourt(viewCourt);
-                                        setViewCourt(null);
-                                        // Scroll từ từ xuống form đặt sân
-                                        setTimeout(() => document.getElementById('booking-form')?.scrollIntoView({ behavior: 'smooth' }), 100);
-                                    }}
-                                    className="w-full bg-slate-900 hover:bg-blue-600 text-white font-bold py-3.5 rounded-xl transition-all active:scale-95 shadow-lg shadow-slate-900/20"
-                                >
-                                    ĐẶT LỊCH SÂN NÀY NGAY
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <CourtModal
+                    viewCourt={viewCourt}
+                    setViewCourt={setViewCourt}
+                    setSelectedCourt={setSelectedCourt}
+                />
             )}
 
             {/* MODAL MÃ QR THANH TOÁN */}
