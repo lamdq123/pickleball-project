@@ -9,6 +9,7 @@ import CourtModal from '../components/CourtModal';
 import QRModal from '../components/QRModal';
 import CourtFilter from '../components/CourtFilter';
 import CourtCard from '../components/CourtCard';
+import BookingModal from '../components/BookingModal';
 interface Court { id: number; name: string; location: string; pricePerHour: number; imageUrl?: string; }
 
 export default function Home() {
@@ -83,17 +84,18 @@ export default function Home() {
         toast.success('Đã đăng xuất!');
     };
 
-    const handleInitBooking = (e: FormEvent) => {
+    const handleInitBooking = (e: FormEvent, finalPrice: number) => {
         e.preventDefault();
         if (!currentUser || !selectedCourt) return;
-        const amount = selectedCourt.pricePerHour;
+
+        // 👉 Dùng finalPrice (giá đã giảm) thay vì giá gốc để tạo mã QR
         const addInfo = `Thanh toan san ${selectedCourt.id} KH ${currentUser.id}`;
-        const url = `https://img.vietqr.io/image/MB-0987654321-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(addInfo)}&accountName=PICKLEBALL%20CLUB`;
+        const url = `https://img.vietqr.io/image/MB-0987654321-compact2.png?amount=${finalPrice}&addInfo=${encodeURIComponent(addInfo)}&accountName=PICKLEBALL%20CLUB`;
+
         setQrUrl(url);
         setBookingPayload({ userId: currentUser.id, courtId: selectedCourt.id, bookDate, timeSlot });
         setShowQR(true);
     };
-
     const handleConfirmPayment = async () => {
         setShowQR(false);
         const res = await fetch('/api/bookings', {
@@ -174,43 +176,19 @@ export default function Home() {
                                 ))}
                             </div>
                         )}
-
-                        {/* FORM ĐẶT SÂN */}
+                        {/* MODAL ĐẶT SÂN */}
                         {selectedCourt && (
-                            <div className="bg-white rounded-xl shadow-md border border-slate-200 p-6 md:p-8 mb-12 animate-fade-in-up scroll-mt-24" id="booking-form">
-                                <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-                                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                    Tạo lịch đặt: <span className="text-blue-600">{selectedCourt.name}</span>
-                                </h3>
-                                <form onSubmit={handleInitBooking} className="flex flex-wrap gap-4 items-end">
-                                    <div className="flex flex-col w-full md:w-64">
-                                        <label className="text-sm font-semibold text-slate-600 mb-2">Ngày chơi:</label>
-                                        <input type="date" required value={bookDate} onChange={e => setBookDate(e.target.value)} className="px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-full bg-slate-50" />
-                                    </div>
-                                    <div className="flex flex-col w-full md:w-64">
-                                        <label className="text-sm font-semibold text-slate-600 mb-2">Khung giờ:</label>
-                                        <select required value={timeSlot} onChange={e => setTimeSlot(e.target.value)} className="px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-full bg-slate-50">
-                                            <option value="" disabled>-- Chọn giờ --</option>
-                                            {TIME_SLOTS.map(slot => {
-                                                const isBooked = bookedSlots.includes(slot);
-                                                return (
-                                                    <option key={slot} value={slot} disabled={isBooked} className={isBooked ? 'text-red-400 line-through' : 'text-slate-800'}>
-                                                        {slot} {isBooked ? '(Đã có người đặt)' : ''}
-                                                    </option>
-                                                );
-                                            })}
-                                        </select>
-                                    </div>
-                                    <div className="flex gap-3 w-full md:w-auto mt-2 md:mt-0">
-                                        <button type="submit" className="flex-1 md:flex-none px-6 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-md shadow-blue-500/30">
-                                            XÁC NHẬN & THANH TOÁN
-                                        </button>
-                                        <button type="button" onClick={() => setSelectedCourt(null)} className="px-6 py-3 bg-slate-100 text-slate-700 rounded-lg font-bold hover:bg-slate-200 transition-colors border border-slate-200">
-                                            HỦY
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
+                            <BookingModal
+                                selectedCourt={selectedCourt}
+                                bookDate={bookDate}
+                                setBookDate={setBookDate}
+                                timeSlot={timeSlot}
+                                setTimeSlot={setTimeSlot}
+                                bookedSlots={bookedSlots}
+                                TIME_SLOTS={TIME_SLOTS}
+                                onClose={() => setSelectedCourt(null)}
+                                onSubmit={handleInitBooking}
+                            />
                         )}
                     </div>
                 )}

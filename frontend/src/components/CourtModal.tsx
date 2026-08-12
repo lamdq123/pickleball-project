@@ -47,7 +47,6 @@ export default function CourtModal({ viewCourt, setViewCourt, setSelectedCourt }
                             onClick={() => {
                                 setSelectedCourt(viewCourt);
                                 setViewCourt(null);
-                                setTimeout(() => document.getElementById('booking-form')?.scrollIntoView({ behavior: 'smooth' }), 100);
                             }}
                             className="bg-slate-900 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-xl transition-all active:scale-95 shadow-lg shadow-slate-900/20"
                         >
