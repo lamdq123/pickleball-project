@@ -1,20 +1,30 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-interface Court { id: number; name: string; location: string; pricePerHour: number; imageUrl?: string; }
+
+// Nhập các mảnh ghép Component
 import Navbar from '../components/Navbar';
 import AuthCard from '../components/AuthCard';
 import CourtModal from '../components/CourtModal';
 import QRModal from '../components/QRModal';
-function Home() {
+import CourtFilter from '../components/CourtFilter';
+import CourtCard from '../components/CourtCard';
+interface Court { id: number; name: string; location: string; pricePerHour: number; imageUrl?: string; }
 
+export default function Home() {
+    const navigate = useNavigate();
     const [courts, setCourts] = useState<Court[]>([]);
     const [token, setToken] = useState(localStorage.getItem('customer_token') || '');
     const [currentUser, setCurrentUser] = useState<any>(JSON.parse(localStorage.getItem('customer_info') || 'null'));
     const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
     const [authForm, setAuthForm] = useState({ name: '', email: '', phone: '', password: '' });
-    // 👉 State quản lý luồng Đặt sân & Xem chi tiết
-    const [selectedCourt, setSelectedCourt] = useState<Court | null>(null); // Sân đang chọn để Đặt giờ
-    const [viewCourt, setViewCourt] = useState<Court | null>(null);         // Sân đang bật Pop-up xem chi tiết
+
+    const [selectedCourt, setSelectedCourt] = useState<Court | null>(null);
+    const [viewCourt, setViewCourt] = useState<Court | null>(null);
+
+    // 👉 1. STATE CHO TÌM KIẾM VÀ LỌC (DANH MỤC)
+    const [searchTerm, setSearchTerm] = useState('');
+    const [priceFilter, setPriceFilter] = useState('all');
 
     const [bookDate, setBookDate] = useState('');
     const [timeSlot, setTimeSlot] = useState('');
@@ -24,9 +34,6 @@ function Home() {
     const [bookingPayload, setBookingPayload] = useState<any>(null);
 
     const TIME_SLOTS = ['05:00 - 06:00', '06:00 - 07:00', '17:00 - 18:00', '18:00 - 19:00', '19:00 - 20:00'];
-
-    // Placeholder Image tĩnh (Dùng tạm khi DB chưa có ảnh)
-    const DEFAULT_COURT_IMG = "https://images.unsplash.com/photo-1622279457486-69d73ad5e4d2?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80";
 
     useEffect(() => {
         fetchCourts();
@@ -49,7 +56,6 @@ function Home() {
         if (res.ok) setCourts(await res.json());
     };
 
-
     const handleAuth = async (e: FormEvent) => {
         e.preventDefault();
         const res = await fetch(`/api/customer?action=${authMode}`, {
@@ -65,6 +71,7 @@ function Home() {
                 localStorage.setItem('customer_token', data.token);
                 localStorage.setItem('customer_info', JSON.stringify(data.user));
                 setToken(data.token); setCurrentUser(data.user);
+                toast.success('Đăng nhập thành công!');
             }
             setAuthForm({ name: '', email: '', phone: '', password: '' });
         } else toast.error(data.error);
@@ -73,6 +80,7 @@ function Home() {
     const handleLogout = () => {
         localStorage.removeItem('customer_token'); localStorage.removeItem('customer_info');
         setToken(''); setCurrentUser(null);
+        toast.success('Đã đăng xuất!');
     };
 
     const handleInitBooking = (e: FormEvent) => {
@@ -92,31 +100,40 @@ function Home() {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bookingPayload)
         });
         if (res.ok) {
-            toast.success('🎉 Thanh toán thành công! Chúng tôi đã gửi biên lai về Email của bạn.');
+            toast.success('🎉 Thanh toán thành công!');
             setSelectedCourt(null); setBookDate(''); setTimeSlot(''); setBookingPayload(null);
-        } else toast.error((await res.json()).error);
+            navigate('/profile');
+        } else {
+            const data = await res.json();
+            toast.error(data.error);
+        }
     };
+
+    // 👉 2. LOGIC BỘ LỌC VÀ TÌM KIẾM SÂN (REAL-TIME)
+    const filteredCourts = courts.filter(court => {
+        const matchSearch = court.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            court.location.toLowerCase().includes(searchTerm.toLowerCase());
+
+        let matchPrice = true;
+        if (priceFilter === 'under100') matchPrice = court.pricePerHour < 100000;
+        if (priceFilter === 'vip') matchPrice = court.pricePerHour >= 100000;
+
+        return matchSearch && matchPrice;
+    });
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-800 pb-20">
-            {/* NAVBAR */}
-            {/* NAVBAR (ĐÃ TÍCH HỢP MOBILE MENU) */}
             <Navbar currentUser={currentUser} onLogout={handleLogout} />
 
-            {/* HERO BANNER SECTION */}
             {!currentUser && (
                 <section className="bg-linear-to-br from-slate-800 to-blue-900 text-white py-20 px-6 text-center shadow-inner">
                     <h1 className="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight">Trải nghiệm đặt sân Pickleball siêu tốc</h1>
                     <p className="text-lg md:text-xl text-blue-200 mb-8 max-w-2xl mx-auto">Hệ thống thông minh giúp bạn tra cứu giờ trống, đặt sân và thanh toán tự động chỉ trong vài giây.</p>
-                    <div className="inline-block bg-blue-600 text-white font-bold py-2 px-6 rounded-full text-sm shadow-lg shadow-blue-900/50">
-                        Tham gia cộng đồng ngay hôm nay
-                    </div>
                 </section>
             )}
 
             <div className="max-w-6xl mx-auto px-4 mt-10">
                 {!currentUser ? (
-                    /* FORM ĐĂNG NHẬP / ĐĂNG KÝ */
                     <AuthCard
                         authMode={authMode}
                         authForm={authForm}
@@ -126,39 +143,37 @@ function Home() {
                     />
                 ) : (
                     <div className="animate-fade-in-up">
-
-                        {/* DANH SÁCH SÂN */}
                         <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-2xl font-bold text-slate-800 border-l-4 border-blue-600 pl-3">Danh sách sân hôm nay</h2>
+                            <h2 className="text-2xl font-bold text-slate-800 border-l-4 border-blue-600 pl-3">Danh sách sân</h2>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-                            {courts.map(court => (
-                                <div key={court.id} className="bg-white rounded-xl shadow-md border border-slate-100 p-5 hover:shadow-xl transition-shadow flex flex-col justify-between">
-                                    <div>
-                                        <div className="h-40 bg-slate-200 rounded-lg mb-4 overflow-hidden">
-                                            <img src={court.imageUrl || DEFAULT_COURT_IMG} alt="Court" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
-                                        </div>
-                                        <h3 className="text-xl font-bold text-slate-800 mb-2 line-clamp-1">{court.name}</h3>
-                                        <p className="text-slate-500 text-sm mb-4 flex items-center gap-1 line-clamp-1">
-                                            📍 {court.location}
-                                        </p>
-                                    </div>
+                        {/* 👉 3. GIAO DIỆN THANH TÌM KIẾM & LỌC (DANH MỤC) */}
+                        <CourtFilter
+                            searchTerm={searchTerm}
+                            setSearchTerm={setSearchTerm}
+                            priceFilter={priceFilter}
+                            setPriceFilter={setPriceFilter}
+                        />
 
-                                    <div>
-                                        <p className="text-blue-600 font-extrabold text-lg mb-4">{court.pricePerHour.toLocaleString('vi-VN')} đ <span className="text-sm text-slate-500 font-normal">/giờ</span></p>
-                                        <div className="flex gap-2">
-                                            <button onClick={() => setViewCourt(court)} className="flex-1 py-2.5 bg-slate-100 text-slate-700 rounded-lg font-semibold hover:bg-slate-200 transition-colors border border-slate-200">
-                                                Xem chi tiết
-                                            </button>
-                                            <button onClick={() => setSelectedCourt(court)} className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-md shadow-blue-500/30">
-                                                ĐẶT NGAY
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                        {/* Hiển thị danh sách sân sau khi lọc */}
+                        {filteredCourts.length === 0 ? (
+                            <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center">
+                                <span className="text-4xl block mb-3">🔍</span>
+                                <h3 className="text-lg font-bold text-slate-700">Không tìm thấy sân nào</h3>
+                                <p className="text-slate-500">Thử đổi từ khóa tìm kiếm hoặc bỏ bộ lọc giá nhé!</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                                {filteredCourts.map(court => (
+                                    <CourtCard
+                                        key={court.id}
+                                        court={court}
+                                        setViewCourt={setViewCourt}
+                                        setSelectedCourt={setSelectedCourt}
+                                    />
+                                ))}
+                            </div>
+                        )}
 
                         {/* FORM ĐẶT SÂN */}
                         {selectedCourt && (
@@ -201,9 +216,7 @@ function Home() {
                 )}
             </div>
 
-            {/* =========================================
-                MODAL XEM CHI TIẾT SÂN (COURT DETAIL)
-            ========================================= */}
+            {/* MODAL CHI TIẾT SÂN */}
             {viewCourt && (
                 <CourtModal
                     viewCourt={viewCourt}
@@ -212,7 +225,7 @@ function Home() {
                 />
             )}
 
-            {/* MODAL MÃ QR THANH TOÁN */}
+            {/* MODAL QR THANH TOÁN */}
             {showQR && (
                 <QRModal
                     qrUrl={qrUrl}
@@ -223,5 +236,3 @@ function Home() {
         </div>
     );
 }
-
-export default Home;
