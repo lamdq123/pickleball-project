@@ -30,13 +30,23 @@ export default function Navbar({ currentUser, onLogout }: NavbarProps) {
                 <div className="hidden md:flex items-center gap-4">
                     {currentUser ? (
                         <>
+                            {/* 👉 CHỈ HIỆN NÚT NÀY NẾU ROLE LÀ ADMIN */}
+                            {currentUser.role === 'admin' && (
+                                <Link to="/admin" className="text-sm font-medium text-amber-400 hover:text-amber-300 transition-colors border-r border-slate-600 pr-4">
+                                    ⚙️ Trang Quản Trị
+                                </Link>
+                            )}
+
                             <Link to="/profile" className="text-slate-300 hover:text-emerald-400 transition-colors cursor-pointer">
                                 Xin chào, <strong className="font-semibold text-white">{currentUser.name}</strong>
                             </Link>
                             <button onClick={onLogout} className="px-4 py-2 text-sm font-medium border border-slate-600 rounded-lg hover:bg-slate-800 transition-colors">Đăng xuất</button>
                         </>
                     ) : (
-                        <Link to="/admin" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">🔑 Dành cho Admin</Link>
+                        // Nút Đăng nhập/Đăng ký dành cho khách chưa login
+                        <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
+                            🔑 Đăng nhập
+                        </button>
                     )}
                 </div>
             </div>

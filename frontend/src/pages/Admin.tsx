@@ -21,14 +21,14 @@ function Admin() {
     const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'courts' | 'users' | 'promos' | 'reviews'>('dashboard');
 
     useEffect(() => {
-        // Lấy thông tin user đang lưu ở localStorage (khi đăng nhập em nhớ lưu kèm role nhé)
+        // Lấy thông tin user từ localStorage
         const userInfo = JSON.parse(localStorage.getItem('customer_info') || 'null');
-        const token = localStorage.getItem('admin_token');
+        const token = localStorage.getItem('customer_token') || localStorage.getItem('admin_token');
 
-        // Kiểm tra xem có phải token admin hoặc user có role === 'admin' không
-        if (!token || (userInfo && userInfo.role !== 'admin')) {
+        // Nếu không có token, HOẶC có đăng nhập nhưng role không phải là admin -> Đuổi về trang chủ
+        if (!token || !userInfo || userInfo.role !== 'admin') {
             toast.error("Bạn không có quyền truy cập trang quản trị!");
-            navigate('/'); // 👉 Đá thẳng về trang chủ nếu không phải admin
+            navigate('/');
         } else {
             fetchCourts();
             fetchUsers();
@@ -37,7 +37,7 @@ function Admin() {
     }, [navigate]);
 
     const getHeaders = () => ({
-        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`,
+        'Authorization': `Bearer ${localStorage.getItem('customer_token') || localStorage.getItem('admin_token')}`,
         'Content-Type': 'application/json'
     });
 
@@ -55,10 +55,12 @@ function Admin() {
         const res = await fetch('/api/bookings', { headers: getHeaders() });
         if (res.ok) setBookings(await res.json());
     };
-
     const handleLogout = () => {
+        localStorage.removeItem('customer_token');
+        localStorage.removeItem('customer_info');
         localStorage.removeItem('admin_token');
-        navigate('/login');
+        toast.success('Đã đăng xuất khỏi tài khoản Admin!');
+        navigate('/');
     };
 
     // ==========================================
