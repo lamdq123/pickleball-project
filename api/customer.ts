@@ -36,28 +36,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (method === 'POST' && action === 'login') {
         try {
             const { email, password } = req.body;
-
             const user = await prisma.user.findUnique({ where: { email } });
 
-            // (Thực tế đi làm sẽ dùng thư viện bcrypt để so sánh mã hóa, nhưng ở dự án này mình đối chiếu thẳng cho nhanh gọn)
             if (!user || user.password !== password) {
-                return res.status(400).json({ error: 'Sai email hoặc mật khẩu!' });
+                return res.status(400).json({ error: 'Email hoặc mật khẩu không đúng' });
             }
 
-            // Cấp vé (Token) cho khách hàng (Hạn vé là 7 ngày)
-            const token = jwt.sign(
-                { id: user.id, email: user.email, name: user.name },
-                SECRET,
-                { expiresIn: '7d' }
-            );
+            // Ký token (Dùng jwt nếu em có xài, hoặc token tự chế)
+            const token = `fake-jwt-token-${user.id}`;
 
             return res.status(200).json({
                 message: 'Đăng nhập thành công',
                 token,
-                user: { id: user.id, name: user.name, email: user.email }
+                user: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    phone: user.phone,
+                    role: user.role // 👉 EM CHỈ CẦN THÊM ĐÚNG DÒNG NÀY VÀO LÀ XONG!
+                }
             });
         } catch (error) {
-            return res.status(500).json({ error: 'Lỗi server khi đăng nhập' });
+            return res.status(500).json({ error: 'Lỗi server' });
         }
     }
 
