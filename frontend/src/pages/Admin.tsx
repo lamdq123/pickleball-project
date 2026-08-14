@@ -21,14 +21,13 @@ function Admin() {
     const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'courts' | 'users' | 'promos' | 'reviews'>('dashboard');
 
     useEffect(() => {
-        // Lấy thông tin user từ localStorage
         const userInfo = JSON.parse(localStorage.getItem('customer_info') || 'null');
-        const token = localStorage.getItem('customer_token') || localStorage.getItem('admin_token');
+        const token = localStorage.getItem('customer_token'); // 👉 Chỉ xài duy nhất token này
 
-        // Nếu không có token, HOẶC có đăng nhập nhưng role không phải là admin -> Đuổi về trang chủ
+        // Nếu không có token, HOẶC role không phải admin -> Đuổi thẳng về Trang chủ
         if (!token || !userInfo || userInfo.role !== 'admin') {
-            toast.error("Bạn không có quyền truy cập trang quản trị!");
-            navigate('/');
+            toast.error("Bạn chưa đăng nhập hoặc không có quyền truy cập!");
+            navigate('/'); // 👉 Sửa chữ '/login' thành '/'
         } else {
             fetchCourts();
             fetchUsers();
@@ -37,7 +36,7 @@ function Admin() {
     }, [navigate]);
 
     const getHeaders = () => ({
-        'Authorization': `Bearer ${localStorage.getItem('customer_token') || localStorage.getItem('admin_token')}`,
+        'Authorization': `Bearer ${localStorage.getItem('customer_token')}`, // 👉 Xóa bỏ cái admin_token đi
         'Content-Type': 'application/json'
     });
 
@@ -58,9 +57,8 @@ function Admin() {
     const handleLogout = () => {
         localStorage.removeItem('customer_token');
         localStorage.removeItem('customer_info');
-        localStorage.removeItem('admin_token');
-        toast.success('Đã đăng xuất khỏi tài khoản Admin!');
-        navigate('/');
+        toast.success('Đã đăng xuất thành công!');
+        navigate('/'); // 👉 Sửa chữ '/login' thành '/'
     };
 
     // ==========================================
