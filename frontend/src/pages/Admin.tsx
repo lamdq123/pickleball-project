@@ -13,10 +13,10 @@ function Admin() {
     const [courts, setCourts] = useState<Court[]>([]);
     const [users, setUsers] = useState<User[]>([]);
     const [bookings, setBookings] = useState<Booking[]>([]);
-
+    const [editingCourtId, setEditingCourtId] = useState<number | null>(null);
     const [courtFormData, setCourtFormData] = useState({ name: '', location: '', pricePerHour: '', imageUrl: '' });
     const [userFormData, setUserFormData] = useState({ name: '', email: '', phone: '', password: '' });
-
+    const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
     // State quản lý Tab đang hiển thị
     const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'courts' | 'users' | 'promos' | 'reviews'>('dashboard');
 
@@ -64,18 +64,28 @@ function Admin() {
     // ==========================================
     // CÁC HÀM XỬ LÝ (CRUD)
     // ==========================================
-    const handleCreateCourt = async (e: FormEvent) => {
+    const handleSubmitCourt = async (e: FormEvent) => {
         e.preventDefault();
+        const method = editingCourtId ? 'PUT' : 'POST'; // Có ID thì là Sửa, không có thì là Thêm mới
+        const body = { ...courtFormData, pricePerHour: Number(courtFormData.pricePerHour), id: editingCourtId };
+
         const res = await fetch('/api/courts', {
-            method: 'POST',
-            headers: getHeaders(),
-            body: JSON.stringify({ ...courtFormData, pricePerHour: Number(courtFormData.pricePerHour) }),
+            method, headers: getHeaders(), body: JSON.stringify(body),
         });
+
         if (res.ok) {
-            toast.success("Thêm sân mới thành công!");
-            setCourtFormData({ name: '', location: '', pricePerHour: '', imageUrl: '' }); // 👉 Thêm imageUrl rỗng để reset
+            toast.success(editingCourtId ? "Đã cập nhật thông tin sân!" : "Thêm sân mới thành công!");
+            setCourtFormData({ name: '', location: '', pricePerHour: '', imageUrl: '' });
+            setEditingCourtId(null);
             fetchCourts();
-        }
+        } else toast.error((await res.json()).error);
+    };
+
+    // Hàm khi bấm nút "Sửa" ở từng thẻ sân
+    const handleEditCourtClick = (court: Court) => {
+        setEditingCourtId(court.id);
+        setCourtFormData({ name: court.name, location: court.location, pricePerHour: court.pricePerHour.toString(), imageUrl: court.imageUrl || '' });
+        window.scrollTo({ top: 0, behavior: 'smooth' }); // Cuộn lên đầu trang chỗ form
     };
 
     const handleDeleteCourt = async (id: number) => {
@@ -114,7 +124,22 @@ function Admin() {
         if (res.ok) fetchBookings();
         else toast.error("Lỗi khi hủy lịch");
     };
-
+    const handleUpdateBooking = async (e: FormEvent) => {
+        e.preventDefault();
+        if (!editingBooking) return;
+        const res = await fetch('/api/bookings', {
+            method: 'PUT', headers: getHeaders(),
+            body: JSON.stringify({
+                id: editingBooking.id, courtId: editingBooking.court.id,
+                bookDate: editingBooking.bookDate, timeSlot: editingBooking.timeSlot
+            })
+        });
+        if (res.ok) {
+            toast.success("Cập nhật lịch thành công!");
+            setEditingBooking(null);
+            fetchBookings();
+        } else toast.error((await res.json()).error);
+    };
     // ==========================================
     // LOGIC XỬ LÝ DATA CHO BIỂU ĐỒ (DASHBOARD)
     // ==========================================
@@ -280,7 +305,8 @@ function Admin() {
                                                 <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-xs font-bold">{b.timeSlot}</span>
                                             </td>
                                             <td className="px-6 py-4 text-center">
-                                                <button onClick={() => handleCancelBooking(b.id)} className="text-red-500 hover:bg-red-50 px-4 py-2 rounded-lg text-sm font-bold transition-colors border border-transparent hover:border-red-200">Hủy lịch</button>
+                                                <button onClick={() => setEditingBooking(b)} className="text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg text-sm font-bold transition-colors mr-2">Sửa</button>
+                                                <button onClick={() => handleCancelBooking(b.id)} className="text-red-500 hover:bg-red-50 px-3 py-2 rounded-lg text-sm font-bold transition-colors border border-transparent hover:border-red-200">Hủy</button>
                                             </td>
                                         </tr>
                                     ))}
@@ -298,7 +324,7 @@ function Admin() {
                         {/* Form thêm sân */}
                         <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-100">
                             <h3 className="text-lg font-bold text-slate-800 mb-6 border-l-4 border-blue-500 pl-3">Thêm sân mới</h3>
-                            <form onSubmit={handleCreateCourt} className="flex flex-col md:flex-row gap-4 items-end">
+                            <form onSubmit={handleSubmitCourt} className="flex flex-col md:flex-row gap-4 items-end">
                                 <div className="flex-1 w-full">
                                     <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Tên sân</label>
                                     <input type="text" required value={courtFormData.name} onChange={e => setCourtFormData({ ...courtFormData, name: e.target.value })} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
@@ -316,7 +342,17 @@ function Admin() {
                                     <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Link Ảnh (Tùy chọn)</label>
                                     <input type="url" placeholder="https://..." value={courtFormData.imageUrl} onChange={e => setCourtFormData({ ...courtFormData, imageUrl: e.target.value })} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                                 </div>
-                                <button type="submit" className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors shadow-md shadow-blue-500/30">THÊM MỚI</button>
+                                {/* Nút bấm của Form Sân (thay thế nút Cũ) */}
+                                <div className="lg:col-span-4 mt-2 flex gap-3">
+                                    <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-md">
+                                        {editingCourtId ? 'LƯU THAY ĐỔI' : 'THÊM SÂN MỚI'}
+                                    </button>
+                                    {editingCourtId && (
+                                        <button type="button" onClick={() => { setEditingCourtId(null); setCourtFormData({ name: '', location: '', pricePerHour: '', imageUrl: '' }); }} className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 px-8 rounded-lg">
+                                            HỦY
+                                        </button>
+                                    )}
+                                </div>
                             </form>
                         </div>
 
@@ -329,7 +365,10 @@ function Admin() {
                                         <p className="text-slate-500 text-sm mt-2 flex items-center gap-1">📍 {court.location}</p>
                                         <p className="text-emerald-600 font-bold mt-4 text-lg">{court.pricePerHour.toLocaleString('vi-VN')} <span className="text-sm font-normal text-slate-500">đ/giờ</span></p>
                                     </div>
-                                    <button onClick={() => handleDeleteCourt(court.id)} className="mt-6 w-full py-2.5 bg-red-50 text-red-600 font-bold rounded-lg hover:bg-red-500 hover:text-white transition-colors border border-red-100">Xóa sân này</button>
+                                    <div className="mt-6 flex gap-2">
+                                        <button onClick={() => handleEditCourtClick(court)} className="flex-1 py-2.5 bg-blue-50 text-blue-600 font-bold rounded-lg hover:bg-blue-600 hover:text-white transition-colors border border-blue-100">Sửa</button>
+                                        <button onClick={() => handleDeleteCourt(court.id)} className="flex-1 py-2.5 bg-red-50 text-red-600 font-bold rounded-lg hover:bg-red-500 hover:text-white transition-colors border border-red-100">Xóa</button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -394,6 +433,38 @@ function Admin() {
                 )}
                 {activeTab === 'promos' && <AdminPromos />}
                 {activeTab === 'reviews' && <AdminReviews />}
+                {/* MODAL SỬA LỊCH ĐẶT */}
+                {editingBooking && (
+                    <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl animate-fade-in">
+                            <h3 className="text-xl font-bold text-slate-800 mb-4">Sửa Lịch Đặt #{editingBooking.id}</h3>
+                            <form onSubmit={handleUpdateBooking} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-600 mb-1">Chuyển sang Sân khác</label>
+                                    <select required value={editingBooking.court.id} onChange={e => setEditingBooking({ ...editingBooking, court: { ...editingBooking.court, id: Number(e.target.value) } })} className="w-full border border-slate-200 p-3 rounded-lg outline-none focus:border-blue-500">
+                                        {courts.map(c => <option key={c.id} value={c.id}>{c.name} - {c.pricePerHour.toLocaleString('vi-VN')}đ/h</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-600 mb-1">Đổi Ngày</label>
+                                    <input type="date" required value={editingBooking.bookDate} onChange={e => setEditingBooking({ ...editingBooking, bookDate: e.target.value })} className="w-full border border-slate-200 p-3 rounded-lg outline-none focus:border-blue-500" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-600 mb-1">Đổi Khung giờ</label>
+                                    <select required value={editingBooking.timeSlot} onChange={e => setEditingBooking({ ...editingBooking, timeSlot: e.target.value })} className="w-full border border-slate-200 p-3 rounded-lg outline-none focus:border-blue-500">
+                                        {["05:00 - 06:00", "06:00 - 07:00", "17:00 - 18:00", "18:00 - 19:00", "19:00 - 20:00", "20:00 - 21:00"].map(slot => (
+                                            <option key={slot} value={slot}>{slot}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="flex justify-end gap-3 pt-4 mt-6 border-t border-slate-100">
+                                    <button type="button" onClick={() => setEditingBooking(null)} className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold">Hủy</button>
+                                    <button type="submit" className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-md">Lưu thay đổi</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
             </main>
         </div>
     );

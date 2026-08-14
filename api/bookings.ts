@@ -99,6 +99,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Không thể hủy lịch.' });
     }
   }
+  // 4. PUT: Sửa lịch đặt (CỦA ADMIN)
+  if (method === 'PUT') {
+    if (!verifyAdmin(req, res)) return;
+    try {
+      const { id, courtId, bookDate, timeSlot } = req.body;
 
+      // Kiểm tra xem giờ mới có bị người khác đặt mất chưa (loại trừ chính nó)
+      const isExist = await prisma.booking.findFirst({
+        where: { courtId: Number(courtId), bookDate, timeSlot, id: { not: Number(id) } }
+      });
+      if (isExist) return res.status(400).json({ error: 'Giờ này đã có người đặt rồi!' });
+
+      const updated = await prisma.booking.update({
+        where: { id: Number(id) },
+        data: { courtId: Number(courtId), bookDate, timeSlot }
+      });
+      return res.status(200).json(updated);
+    } catch (error) {
+      return res.status(500).json({ error: 'Không thể sửa lịch' });
+    }
+  }
   return res.status(405).json({ error: 'Method not allowed' });
 }

@@ -31,7 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         try {
             const { name, location, pricePerHour, imageUrl } = req.body;
             const newCourt = await prisma.court.create({
-                data: { name, location, pricePerHour: Number(pricePerHour),imageUrl: imageUrl || null },
+                data: { name, location, pricePerHour: Number(pricePerHour), imageUrl: imageUrl || null },
             });
             return res.status(200).json(newCourt);
         } catch (error) {
@@ -68,5 +68,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Nếu dùng phương thức lạ (như PUT, PATCH) thì báo lỗi
+
+
+    // 4. PUT: Chỉnh sửa thông tin sân (Dành cho Admin)
+    if (req.method === 'PUT') {
+        if (!verifyAdmin(req, res)) return;
+        try {
+            const { id, name, location, pricePerHour, imageUrl } = req.body;
+            const updatedCourt = await prisma.court.update({
+                where: { id: Number(id) },
+                data: {
+                    name,
+                    location,
+                    pricePerHour: Number(pricePerHour),
+                    imageUrl: imageUrl || null
+                }
+            });
+            return res.status(200).json(updatedCourt);
+        } catch (error) {
+            return res.status(400).json({ error: 'Không thể cập nhật sân' });
+        }
+    }
     return res.status(405).json({ error: 'Method not allowed' });
 }
