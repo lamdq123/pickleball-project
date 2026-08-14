@@ -312,7 +312,7 @@ function Admin() {
                                     <input type="number" required value={courtFormData.pricePerHour} onChange={e => setCourtFormData({ ...courtFormData, pricePerHour: e.target.value })} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                                 </div>
                                 {/* 👉 THÊM Ô NHẬP LINK ẢNH Ở ĐÂY */}
-                                <div className="w-full">
+                                <div className="flex-1 w-full">
                                     <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Link Ảnh (Tùy chọn)</label>
                                     <input type="url" placeholder="https://..." value={courtFormData.imageUrl} onChange={e => setCourtFormData({ ...courtFormData, imageUrl: e.target.value })} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                                 </div>
