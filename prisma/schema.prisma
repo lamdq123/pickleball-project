@@ -24,9 +24,11 @@ model Court {
   name         String
   location     String
   pricePerHour Float
+  imageUrl     String?   // 👉 EM THÊM ĐÚNG DÒNG NÀY VÀO LÀ ĐƯỢC
+   
+  bookings     Booking[]
+  reviews      Review[]
   createdAt    DateTime  @default(now())
-  bookings     Booking[] // Thêm dòng này: 1 Sân có thể có nhiều Booking
-  reviews   Review[]
 }
 
 // BẢNG MỚI: Lưu trữ thông tin Đặt Sân

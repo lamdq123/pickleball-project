@@ -14,7 +14,7 @@ function Admin() {
     const [users, setUsers] = useState<User[]>([]);
     const [bookings, setBookings] = useState<Booking[]>([]);
 
-    const [courtFormData, setCourtFormData] = useState({ name: '', location: '', pricePerHour: '' });
+    const [courtFormData, setCourtFormData] = useState({ name: '', location: '', pricePerHour: '', imageUrl: '' });
     const [userFormData, setUserFormData] = useState({ name: '', email: '', phone: '', password: '' });
 
     // State quản lý Tab đang hiển thị
@@ -73,7 +73,7 @@ function Admin() {
         });
         if (res.ok) {
             toast.success("Thêm sân mới thành công!");
-            setCourtFormData({ name: '', location: '', pricePerHour: '' });
+            setCourtFormData({ name: '', location: '', pricePerHour: '', imageUrl: '' }); // 👉 Thêm imageUrl rỗng để reset
             fetchCourts();
         }
     };
@@ -310,6 +310,11 @@ function Admin() {
                                 <div className="flex-1 w-full">
                                     <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Giá (VNĐ/giờ)</label>
                                     <input type="number" required value={courtFormData.pricePerHour} onChange={e => setCourtFormData({ ...courtFormData, pricePerHour: e.target.value })} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                                </div>
+                                {/* 👉 THÊM Ô NHẬP LINK ẢNH Ở ĐÂY */}
+                                <div className="w-full">
+                                    <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Link Ảnh (Tùy chọn)</label>
+                                    <input type="url" placeholder="https://..." value={courtFormData.imageUrl} onChange={e => setCourtFormData({ ...courtFormData, imageUrl: e.target.value })} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                                 </div>
                                 <button type="submit" className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors shadow-md shadow-blue-500/30">THÊM MỚI</button>
                             </form>

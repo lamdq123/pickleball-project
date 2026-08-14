@@ -29,9 +29,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!verifyAdmin(req, res)) return;
 
         try {
-            const { name, location, pricePerHour } = req.body;
+            const { name, location, pricePerHour, imageUrl } = req.body;
             const newCourt = await prisma.court.create({
-                data: { name, location, pricePerHour: Number(pricePerHour) },
+                data: { name, location, pricePerHour: Number(pricePerHour),imageUrl: imageUrl || null },
             });
             return res.status(200).json(newCourt);
         } catch (error) {
