@@ -1,185 +1,47 @@
-import { useEffect, useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { useEffect, useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
+
+// 👉 Import 6 Component con em vừa tách
+import AdminDashboard from '../components/admin/AdminDashboard';
+import AdminBookings from '../components/admin/AdminBookings';
+import AdminCourts from '../components/admin/AdminCourts';
+import AdminUsers from '../components/admin/AdminUsers';
 import AdminPromos from '../components/admin/AdminPromos';
 import AdminReviews from '../components/admin/AdminReviews';
-interface Court { id: number; name: string; location: string; pricePerHour: number; imageUrl?: string; }
-interface User { id: number; name: string; email: string; phone: string; }
-interface Booking { id: number; court: Court; user: User; bookDate: string; timeSlot: string; }
 
 function Admin() {
     const navigate = useNavigate();
-    const [courts, setCourts] = useState<Court[]>([]);
-    const [users, setUsers] = useState<User[]>([]);
-    const [bookings, setBookings] = useState<Booking[]>([]);
-    const [editingCourtId, setEditingCourtId] = useState<number | null>(null);
-    const [courtFormData, setCourtFormData] = useState({ name: '', location: '', pricePerHour: '', imageUrl: '' });
-    const [userFormData, setUserFormData] = useState({ name: '', email: '', phone: '', password: '' });
-    const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
-    // State quản lý Tab đang hiển thị
     const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'courts' | 'users' | 'promos' | 'reviews'>('dashboard');
 
     useEffect(() => {
         const userInfo = JSON.parse(localStorage.getItem('customer_info') || 'null');
-        const token = localStorage.getItem('customer_token'); // 👉 Chỉ xài duy nhất token này
+        const token = localStorage.getItem('customer_token');
 
-        // Nếu không có token, HOẶC role không phải admin -> Đuổi thẳng về Trang chủ
         if (!token || !userInfo || userInfo.role !== 'admin') {
             toast.error("Bạn chưa đăng nhập hoặc không có quyền truy cập!");
-            navigate('/'); // 👉 Sửa chữ '/login' thành '/'
-        } else {
-            fetchCourts();
-            fetchUsers();
-            fetchBookings();
+            navigate('/');
         }
     }, [navigate]);
 
-    const getHeaders = () => ({
-        'Authorization': `Bearer ${localStorage.getItem('customer_token')}`, // 👉 Xóa bỏ cái admin_token đi
-        'Content-Type': 'application/json'
-    });
-
-    const fetchCourts = async () => {
-        const res = await fetch('/api/courts', { headers: getHeaders() });
-        if (res.ok) setCourts(await res.json());
-    };
-
-    const fetchUsers = async () => {
-        const res = await fetch('/api/users', { headers: getHeaders() });
-        if (res.ok) setUsers(await res.json());
-    };
-
-    const fetchBookings = async () => {
-        const res = await fetch('/api/bookings', { headers: getHeaders() });
-        if (res.ok) setBookings(await res.json());
-    };
     const handleLogout = () => {
         localStorage.removeItem('customer_token');
         localStorage.removeItem('customer_info');
         toast.success('Đã đăng xuất thành công!');
-        navigate('/'); // 👉 Sửa chữ '/login' thành '/'
+        navigate('/');
     };
-
-    // ==========================================
-    // CÁC HÀM XỬ LÝ (CRUD)
-    // ==========================================
-    const handleSubmitCourt = async (e: FormEvent) => {
-        e.preventDefault();
-        const method = editingCourtId ? 'PUT' : 'POST'; // Có ID thì là Sửa, không có thì là Thêm mới
-        const body = { ...courtFormData, pricePerHour: Number(courtFormData.pricePerHour), id: editingCourtId };
-
-        const res = await fetch('/api/courts', {
-            method, headers: getHeaders(), body: JSON.stringify(body),
-        });
-
-        if (res.ok) {
-            toast.success(editingCourtId ? "Đã cập nhật thông tin sân!" : "Thêm sân mới thành công!");
-            setCourtFormData({ name: '', location: '', pricePerHour: '', imageUrl: '' });
-            setEditingCourtId(null);
-            fetchCourts();
-        } else toast.error((await res.json()).error);
-    };
-
-    // Hàm khi bấm nút "Sửa" ở từng thẻ sân
-    const handleEditCourtClick = (court: Court) => {
-        setEditingCourtId(court.id);
-        setCourtFormData({ name: court.name, location: court.location, pricePerHour: court.pricePerHour.toString(), imageUrl: court.imageUrl || '' });
-        window.scrollTo({ top: 0, behavior: 'smooth' }); // Cuộn lên đầu trang chỗ form
-    };
-
-    const handleDeleteCourt = async (id: number) => {
-        if (!window.confirm("Xóa sân này? Hệ thống sẽ báo lỗi nếu sân đang có lịch đặt.")) return;
-        const res = await fetch(`/api/courts?id=${id}`, { method: 'DELETE', headers: getHeaders() });
-        if (res.ok) fetchCourts();
-        else toast.error((await res.json()).error);
-    };
-
-    const handleRegisterUser = async (e: FormEvent) => {
-        e.preventDefault();
-        const res = await fetch('/api/users', {
-            method: 'POST',
-            headers: getHeaders(),
-            body: JSON.stringify(userFormData)
-        });
-        if (res.ok) {
-            toast.success("Đã thêm thành viên!");
-            setUserFormData({ name: '', email: '', phone: '', password: '' });
-            fetchUsers();
-        } else toast.error((await res.json()).error);
-    };
-
-    const handleDeleteUser = async (id: number) => {
-        if (!window.confirm("Bạn có chắc chắn muốn xóa thành viên này không?")) return;
-        const res = await fetch(`/api/users?id=${id}`, { method: 'DELETE', headers: getHeaders() });
-        if (res.ok) {
-            toast.success("Đã xóa thành viên thành công!");
-            fetchUsers();
-        } else toast.error((await res.json()).error);
-    };
-
-    const handleCancelBooking = async (id: number) => {
-        if (!window.confirm("Hủy lịch đặt này?")) return;
-        const res = await fetch(`/api/bookings?id=${id}`, { method: 'DELETE', headers: getHeaders() });
-        if (res.ok) fetchBookings();
-        else toast.error("Lỗi khi hủy lịch");
-    };
-    const handleUpdateBooking = async (e: FormEvent) => {
-        e.preventDefault();
-        if (!editingBooking) return;
-        const res = await fetch('/api/bookings', {
-            method: 'PUT', headers: getHeaders(),
-            body: JSON.stringify({
-                id: editingBooking.id, courtId: editingBooking.court.id,
-                bookDate: editingBooking.bookDate, timeSlot: editingBooking.timeSlot
-            })
-        });
-        if (res.ok) {
-            toast.success("Cập nhật lịch thành công!");
-            setEditingBooking(null);
-            fetchBookings();
-        } else toast.error((await res.json()).error);
-    };
-    // ==========================================
-    // LOGIC XỬ LÝ DATA CHO BIỂU ĐỒ (DASHBOARD)
-    // ==========================================
-    const totalRevenue = bookings.reduce((sum, b) => sum + (b.court?.pricePerHour || 0), 0);
-    const totalBookings = bookings.length;
-    const totalUsers = users.length;
-
-    // 1. Dữ liệu Biểu đồ Cột (Doanh thu theo ngày)
-    const revenueByDate = bookings.reduce((acc: any, b) => {
-        const date = b.bookDate;
-        if (!acc[date]) acc[date] = 0;
-        acc[date] += (b.court?.pricePerHour || 0);
-        return acc;
-    }, {});
-
-    const chartData = Object.keys(revenueByDate).map(date => ({
-        name: date,
-        "Doanh thu": revenueByDate[date]
-    })).sort((a, b) => a.name.localeCompare(b.name));
-
-    // 2. Dữ liệu Biểu đồ Tròn (Tỷ trọng theo Sân)
-    const revenueByCourt = bookings.reduce((acc: any, b) => {
-        const courtName = b.court?.name || 'Sân đã xóa';
-        if (!acc[courtName]) acc[courtName] = 0;
-        acc[courtName] += (b.court?.pricePerHour || 0);
-        return acc;
-    }, {});
-
-    const pieData = Object.keys(revenueByCourt).map(name => ({
-        name, value: revenueByCourt[name]
-    }));
-
-    const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
 
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-800">
             {/* Header Admin */}
             <header className="bg-slate-900 text-white px-6 md:px-10 py-4 flex justify-between items-center shadow-md">
-                <h1 className="text-2xl font-bold tracking-tight">🎾 Admin Portal</h1>
-                <button onClick={handleLogout} className="px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg font-semibold transition-colors text-sm shadow-md">Đăng xuất</button>
+                <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+                    <span className="text-emerald-400">🎾</span> Admin Portal
+                </h1>
+                <div className="flex items-center gap-6">
+                    <Link to="/" className="text-sm font-medium text-slate-300 hover:text-white transition-colors flex items-center gap-2">🏠 Về Trang Chủ</Link>
+                    <button onClick={handleLogout} className="px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg font-semibold transition-colors text-sm shadow-md">Đăng xuất</button>
+                </div>
             </header>
 
             {/* Navigation Tabs */}
@@ -188,283 +50,19 @@ function Admin() {
                 <button onClick={() => setActiveTab('bookings')} className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'bookings' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>📅 Lịch đặt sân</button>
                 <button onClick={() => setActiveTab('courts')} className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'courts' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>🏟 Quản lý sân</button>
                 <button onClick={() => setActiveTab('users')} className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'users' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>👥 Khách hàng</button>
-                <button
-                    onClick={() => setActiveTab('promos')}
-                    className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'promos' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}
-                >
-                    🎟 Mã giảm giá
-                </button>
-
-                <button
-                    onClick={() => setActiveTab('reviews')}
-                    className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'reviews' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}
-                >
-                    ⭐ Đánh giá
-                </button>
+                <button onClick={() => setActiveTab('promos')} className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'promos' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>🎟 Mã giảm giá</button>
+                <button onClick={() => setActiveTab('reviews')} className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'reviews' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>⭐ Đánh giá</button>
             </div>
 
             {/* Main Content */}
             <main className="flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full">
-
-                {/* ==========================================
-                    TAB 1: DASHBOARD & BIỂU ĐỒ 
-                ========================================== */}
-                {activeTab === 'dashboard' && (
-                    <div className="space-y-6 animate-fade-in">
-                        {/* 3 Thẻ thống kê tổng quan */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-5 hover:shadow-md transition-shadow">
-                                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center text-3xl shadow-inner">💰</div>
-                                <div>
-                                    <p className="text-slate-500 font-semibold text-sm uppercase tracking-wider">Tổng doanh thu</p>
-                                    <p className="text-3xl font-extrabold text-slate-800 mt-1">{totalRevenue.toLocaleString('vi-VN')} đ</p>
-                                </div>
-                            </div>
-                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-5 hover:shadow-md transition-shadow">
-                                <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-3xl shadow-inner">📅</div>
-                                <div>
-                                    <p className="text-slate-500 font-semibold text-sm uppercase tracking-wider">Số lượt đặt sân</p>
-                                    <p className="text-3xl font-extrabold text-slate-800 mt-1">{totalBookings} <span className="text-lg text-slate-500 font-medium">lượt</span></p>
-                                </div>
-                            </div>
-                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-5 hover:shadow-md transition-shadow">
-                                <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center text-3xl shadow-inner">👥</div>
-                                <div>
-                                    <p className="text-slate-500 font-semibold text-sm uppercase tracking-wider">Tổng khách hàng</p>
-                                    <p className="text-3xl font-extrabold text-slate-800 mt-1">{totalUsers} <span className="text-lg text-slate-500 font-medium">người</span></p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* 2 Biểu đồ Thống kê */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-                            {/* Biểu đồ Cột */}
-                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                                <h3 className="text-lg font-bold text-slate-800 mb-6 border-l-4 border-emerald-500 pl-3">Doanh thu theo ngày</h3>
-                                <div className="h-80 w-full">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={chartData}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                            <XAxis dataKey="name" tick={{ fill: '#64748b' }} axisLine={false} tickLine={false} />
-                                            <YAxis tick={{ fill: '#64748b' }} axisLine={false} tickLine={false} tickFormatter={(value) => `${(value / 1000)}k`} />
-                                            <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
-                                            <Bar dataKey="Doanh thu" fill="#10b981" radius={[6, 6, 0, 0]} barSize={40} />
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </div>
-
-                            {/* Biểu đồ Tròn */}
-                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                                <h3 className="text-lg font-bold text-slate-800 mb-6 border-l-4 border-blue-500 pl-3">Tỷ trọng doanh thu theo sân</h3>
-                                <div className="h-80 w-full">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <PieChart>
-                                            <Pie data={pieData} cx="50%" cy="50%" innerRadius={80} outerRadius={110} paddingAngle={5} dataKey="value">
-                                                {pieData.map((_entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                                ))}
-                                            </Pie>
-                                            <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
-                                            <Legend verticalAlign="bottom" height={36} iconType="circle" />
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* ==========================================
-                    TAB 2: QUẢN LÝ LỊCH ĐẶT 
-                ========================================== */}
-                {activeTab === 'bookings' && (
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden animate-fade-in">
-                        <div className="p-6 border-b border-slate-100">
-                            <h3 className="text-lg font-bold text-slate-800">Danh sách Lịch đặt sân</h3>
-                        </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
-                                <thead className="bg-slate-50 text-slate-500 text-sm uppercase tracking-wider">
-                                    <tr>
-                                        <th className="px-6 py-4 font-semibold">Mã vé</th>
-                                        <th className="px-6 py-4 font-semibold">Khách hàng</th>
-                                        <th className="px-6 py-4 font-semibold">Sân</th>
-                                        <th className="px-6 py-4 font-semibold">Ngày & Giờ</th>
-                                        <th className="px-6 py-4 font-semibold text-center">Thao tác</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
-                                    {bookings.map(b => (
-                                        <tr key={b.id} className="hover:bg-slate-50 transition-colors">
-                                            <td className="px-6 py-4 font-bold text-slate-700">#{b.id}</td>
-                                            <td className="px-6 py-4 font-medium text-slate-900">{b.user?.name || 'Khách vãng lai'}</td>
-                                            <td className="px-6 py-4 text-blue-600 font-semibold">{b.court?.name || 'Sân đã xóa'}</td>
-                                            <td className="px-6 py-4 text-slate-600">
-                                                <span className="bg-slate-200 text-slate-700 px-2 py-1 rounded text-xs mr-2 font-bold">{b.bookDate}</span>
-                                                <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-xs font-bold">{b.timeSlot}</span>
-                                            </td>
-                                            <td className="px-6 py-4 text-center">
-                                                <button onClick={() => setEditingBooking(b)} className="text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg text-sm font-bold transition-colors mr-2">Sửa</button>
-                                                <button onClick={() => handleCancelBooking(b.id)} className="text-red-500 hover:bg-red-50 px-3 py-2 rounded-lg text-sm font-bold transition-colors border border-transparent hover:border-red-200">Hủy</button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                )}
-
-                {/* ==========================================
-                    TAB 3: QUẢN LÝ SÂN BÃI
-                ========================================== */}
-                {activeTab === 'courts' && (
-                    <div className="space-y-8 animate-fade-in">
-                        {/* Form thêm sân */}
-                        <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-100">
-                            <h3 className="text-lg font-bold text-slate-800 mb-6 border-l-4 border-blue-500 pl-3">Thêm sân mới</h3>
-                            <form onSubmit={handleSubmitCourt} className="flex flex-col md:flex-row gap-4 items-end">
-                                <div className="flex-1 w-full">
-                                    <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Tên sân</label>
-                                    <input type="text" required value={courtFormData.name} onChange={e => setCourtFormData({ ...courtFormData, name: e.target.value })} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
-                                </div>
-                                <div className="flex-1 w-full">
-                                    <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Vị trí</label>
-                                    <input type="text" required value={courtFormData.location} onChange={e => setCourtFormData({ ...courtFormData, location: e.target.value })} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
-                                </div>
-                                <div className="flex-1 w-full">
-                                    <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Giá (VNĐ/giờ)</label>
-                                    <input type="number" required value={courtFormData.pricePerHour} onChange={e => setCourtFormData({ ...courtFormData, pricePerHour: e.target.value })} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
-                                </div>
-                                {/* 👉 THÊM Ô NHẬP LINK ẢNH Ở ĐÂY */}
-                                <div className="flex-1 w-full">
-                                    <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Link Ảnh (Tùy chọn)</label>
-                                    <input type="url" placeholder="https://..." value={courtFormData.imageUrl} onChange={e => setCourtFormData({ ...courtFormData, imageUrl: e.target.value })} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
-                                </div>
-                                {/* Nút bấm của Form Sân (thay thế nút Cũ) */}
-                                <div className="lg:col-span-4 mt-2 flex gap-3">
-                                    <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-md">
-                                        {editingCourtId ? 'LƯU THAY ĐỔI' : 'THÊM SÂN MỚI'}
-                                    </button>
-                                    {editingCourtId && (
-                                        <button type="button" onClick={() => { setEditingCourtId(null); setCourtFormData({ name: '', location: '', pricePerHour: '', imageUrl: '' }); }} className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 px-8 rounded-lg">
-                                            HỦY
-                                        </button>
-                                    )}
-                                </div>
-                            </form>
-                        </div>
-
-                        {/* Grid danh sách sân */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {courts.map(court => (
-                                <div key={court.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow flex flex-col justify-between">
-                                    <div>
-                                        <h4 className="text-xl font-bold text-slate-800">{court.name}</h4>
-                                        <p className="text-slate-500 text-sm mt-2 flex items-center gap-1">📍 {court.location}</p>
-                                        <p className="text-emerald-600 font-bold mt-4 text-lg">{court.pricePerHour.toLocaleString('vi-VN')} <span className="text-sm font-normal text-slate-500">đ/giờ</span></p>
-                                    </div>
-                                    <div className="mt-6 flex gap-2">
-                                        <button onClick={() => handleEditCourtClick(court)} className="flex-1 py-2.5 bg-blue-50 text-blue-600 font-bold rounded-lg hover:bg-blue-600 hover:text-white transition-colors border border-blue-100">Sửa</button>
-                                        <button onClick={() => handleDeleteCourt(court.id)} className="flex-1 py-2.5 bg-red-50 text-red-600 font-bold rounded-lg hover:bg-red-500 hover:text-white transition-colors border border-red-100">Xóa</button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* ==========================================
-                    TAB 4: QUẢN LÝ KHÁCH HÀNG 
-                ========================================== */}
-                {activeTab === 'users' && (
-                    <div className="space-y-8 animate-fade-in">
-                        {/* Form thêm user */}
-                        <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-100">
-                            <h3 className="text-lg font-bold text-slate-800 mb-6 border-l-4 border-amber-500 pl-3">Đăng ký Thành viên</h3>
-                            <form onSubmit={handleRegisterUser} className="flex flex-col md:flex-row gap-4 items-end">
-                                <div className="flex-1 w-full">
-                                    <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Họ Tên</label>
-                                    <input type="text" required value={userFormData.name} onChange={e => setUserFormData({ ...userFormData, name: e.target.value })} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
-                                </div>
-                                <div className="flex-1 w-full">
-                                    <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Email</label>
-                                    <input type="email" required value={userFormData.email} onChange={e => setUserFormData({ ...userFormData, email: e.target.value })} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
-                                </div>
-                                <div className="flex-1 w-full">
-                                    <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Số điện thoại</label>
-                                    <input type="text" required value={userFormData.phone} onChange={e => setUserFormData({ ...userFormData, phone: e.target.value })} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
-                                </div>
-                                <button type="submit" className="w-full md:w-auto bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-8 rounded-lg transition-colors shadow-md shadow-amber-500/30">TẠO TÀI KHOẢN</button>
-                            </form>
-                        </div>
-
-                        {/* Table User */}
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse">
-                                    <thead className="bg-slate-50 text-slate-500 text-sm uppercase tracking-wider">
-                                        <tr>
-                                            <th className="px-6 py-4 font-semibold">ID</th>
-                                            <th className="px-6 py-4 font-semibold">Họ Tên</th>
-                                            <th className="px-6 py-4 font-semibold">Email</th>
-                                            <th className="px-6 py-4 font-semibold">SĐT</th>
-                                            <th className="px-6 py-4 font-semibold text-center">Thao tác</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100">
-                                        {users.map((user) => (
-                                            <tr key={user.id} className="hover:bg-slate-50 transition-colors">
-                                                <td className="px-6 py-4 font-bold text-slate-700">#{user.id}</td>
-                                                <td className="px-6 py-4 font-medium text-slate-900">{user.name}</td>
-                                                <td className="px-6 py-4 text-slate-600">{user.email}</td>
-                                                <td className="px-6 py-4 text-slate-600">{user.phone || 'Chưa cập nhật'}</td>
-                                                <td className="px-6 py-4 text-center">
-                                                    <button onClick={() => handleDeleteUser(user.id)} className="bg-red-50 text-red-600 hover:bg-red-500 hover:text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors border border-transparent hover:border-red-200">Xóa</button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                {/* Gọi các Component con ra */}
+                {activeTab === 'dashboard' && <AdminDashboard setActiveTab={setActiveTab} />}
+                {activeTab === 'bookings' && <AdminBookings />}
+                {activeTab === 'courts' && <AdminCourts />}
+                {activeTab === 'users' && <AdminUsers />}
                 {activeTab === 'promos' && <AdminPromos />}
                 {activeTab === 'reviews' && <AdminReviews />}
-                {/* MODAL SỬA LỊCH ĐẶT */}
-                {editingBooking && (
-                    <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                        <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl animate-fade-in">
-                            <h3 className="text-xl font-bold text-slate-800 mb-4">Sửa Lịch Đặt #{editingBooking.id}</h3>
-                            <form onSubmit={handleUpdateBooking} className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-600 mb-1">Chuyển sang Sân khác</label>
-                                    <select required value={editingBooking.court.id} onChange={e => setEditingBooking({ ...editingBooking, court: { ...editingBooking.court, id: Number(e.target.value) } })} className="w-full border border-slate-200 p-3 rounded-lg outline-none focus:border-blue-500">
-                                        {courts.map(c => <option key={c.id} value={c.id}>{c.name} - {c.pricePerHour.toLocaleString('vi-VN')}đ/h</option>)}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-600 mb-1">Đổi Ngày</label>
-                                    <input type="date" required value={editingBooking.bookDate} onChange={e => setEditingBooking({ ...editingBooking, bookDate: e.target.value })} className="w-full border border-slate-200 p-3 rounded-lg outline-none focus:border-blue-500" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-600 mb-1">Đổi Khung giờ</label>
-                                    <select required value={editingBooking.timeSlot} onChange={e => setEditingBooking({ ...editingBooking, timeSlot: e.target.value })} className="w-full border border-slate-200 p-3 rounded-lg outline-none focus:border-blue-500">
-                                        {["05:00 - 06:00", "06:00 - 07:00", "17:00 - 18:00", "18:00 - 19:00", "19:00 - 20:00", "20:00 - 21:00"].map(slot => (
-                                            <option key={slot} value={slot}>{slot}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="flex justify-end gap-3 pt-4 mt-6 border-t border-slate-100">
-                                    <button type="button" onClick={() => setEditingBooking(null)} className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold">Hủy</button>
-                                    <button type="submit" className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-md">Lưu thay đổi</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                )}
             </main>
         </div>
     );
