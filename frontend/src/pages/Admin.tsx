@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useNavigate, Link, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 // 👉 Import 6 Component con em vừa tách
@@ -12,7 +12,12 @@ import AdminReviews from '../components/admin/AdminReviews';
 
 function Admin() {
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'courts' | 'users' | 'promos' | 'reviews'>('dashboard');
+    const { tab } = useParams(); // 👉 Rút tên tab từ trên thanh URL xuống
+
+    // Kiểm tra xem URL có gõ bậy bạ không. Nếu không nhập gì hoặc gõ sai, mặc định là 'dashboard'
+    const validTabs = ['dashboard', 'bookings', 'courts', 'users', 'promos', 'reviews'];
+    const activeTab = validTabs.includes(tab || '') ? tab : 'dashboard';
+
 
     useEffect(() => {
         const userInfo = JSON.parse(localStorage.getItem('customer_info') || 'null');
@@ -46,18 +51,18 @@ function Admin() {
 
             {/* Navigation Tabs */}
             <div className="bg-white border-b border-slate-200 px-6 md:px-10 py-3 flex gap-2 overflow-x-auto shadow-sm sticky top-0 z-10">
-                <button onClick={() => setActiveTab('dashboard')} className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'dashboard' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>📊 Dashboard</button>
-                <button onClick={() => setActiveTab('bookings')} className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'bookings' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>📅 Lịch đặt sân</button>
-                <button onClick={() => setActiveTab('courts')} className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'courts' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>🏟 Quản lý sân</button>
-                <button onClick={() => setActiveTab('users')} className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'users' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>👥 Khách hàng</button>
-                <button onClick={() => setActiveTab('promos')} className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'promos' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>🎟 Mã giảm giá</button>
-                <button onClick={() => setActiveTab('reviews')} className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'reviews' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>⭐ Đánh giá</button>
+                <button onClick={() => navigate('/admin/dashboard')} className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'dashboard' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>📊 Dashboard</button>
+                <button onClick={() => navigate('/admin/bookings')} className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'bookings' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>📅 Lịch đặt sân</button>
+                <button onClick={() => navigate('/admin/courts')} className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'courts' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>🏟 Quản lý sân</button>
+                <button onClick={() => navigate('/admin/users')} className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'users' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>👥 Khách hàng</button>
+                <button onClick={() => navigate('/admin/promos')} className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'promos' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>🎟 Mã giảm giá</button>
+                <button onClick={() => navigate('/admin/reviews')} className={`px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap ${activeTab === 'reviews' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>⭐ Đánh giá</button>
             </div>
 
             {/* Main Content */}
             <main className="flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full">
                 {/* Gọi các Component con ra */}
-                {activeTab === 'dashboard' && <AdminDashboard setActiveTab={setActiveTab} />}
+                {activeTab === 'dashboard' && <AdminDashboard />}
                 {activeTab === 'bookings' && <AdminBookings />}
                 {activeTab === 'courts' && <AdminCourts />}
                 {activeTab === 'users' && <AdminUsers />}

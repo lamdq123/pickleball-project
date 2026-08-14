@@ -1,9 +1,14 @@
 import { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { useNavigate } from 'react-router-dom';
 
-export default function AdminDashboard({ setActiveTab }: { setActiveTab: (tab: any) => void }) {
+// 👉 1. Bỏ { setActiveTab } đi, để trống ngoặc đơn ()
+export default function AdminDashboard() {
     const [bookings, setBookings] = useState<any[]>([]);
     const [users, setUsers] = useState<any[]>([]);
+
+    // 👉 2. Khai báo biến navigate ở đây
+    const navigate = useNavigate();
 
     useEffect(() => {
         const getHeaders = () => ({
@@ -64,8 +69,10 @@ export default function AdminDashboard({ setActiveTab }: { setActiveTab: (tab: a
                         <p className="text-3xl font-extrabold text-slate-800 mt-1">{totalUsers} <span className="text-lg text-slate-500 font-medium">người</span></p>
                     </div>
                 </div>
-                <button onClick={() => setActiveTab('promos')} className="px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap bg-blue-100 text-blue-700 hover:bg-blue-200">🎟 Mã giảm giá</button>
-                <button onClick={() => setActiveTab('reviews')} className="px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap bg-blue-100 text-blue-700 hover:bg-blue-200">⭐ Đánh giá</button>
+
+                {/* 👉 3. Sửa 2 nút này thành navigate */}
+                <button onClick={() => navigate('/admin/promos')} className="px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap bg-blue-100 text-blue-700 hover:bg-blue-200">🎟 Mã giảm giá</button>
+                <button onClick={() => navigate('/admin/reviews')} className="px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap bg-blue-100 text-blue-700 hover:bg-blue-200">⭐ Đánh giá</button>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">

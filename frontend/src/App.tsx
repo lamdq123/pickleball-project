@@ -42,6 +42,8 @@ function App() {
               <Admin />
             </ProtectedRoute>
           } />
+          {/* Cổng Admin có tham số động (Ví dụ: /admin/courts) */}
+          <Route path="/admin/:tab" element={<Admin />} />
         </Routes>
 
       </div>
