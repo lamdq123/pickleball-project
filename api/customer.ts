@@ -3,37 +3,31 @@ import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 
 const prisma = new PrismaClient();
-// Chìa khóa mã hóa (Giống hệt chìa khóa của Admin)
-const SECRET = process.env.JWT_SECRET || 'pickleball_bi_mat_sieu_cap_vu_tru_2026';
+const JWT_SECRET = process.env.JWT_SECRET || 'cai_nay_la_bi_mat_quoc_gia';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    const { method } = req;
-    const action = req.query.action; // Bắt hành động từ URL (?action=...)
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-    // ==========================================
-    // 1. KHÁCH HÀNG ĐĂNG KÝ
-    // ==========================================
-    if (method === 'POST' && action === 'register') {
+    const { action } = req.query;
+
+    // 1. ĐĂNG KÝ
+    if (action === 'register') {
         try {
             const { name, email, phone, password } = req.body;
+            const existingUser = await prisma.user.findUnique({ where: { email } });
+            if (existingUser) return res.status(400).json({ error: 'Email đã được sử dụng!' });
 
-            const exists = await prisma.user.findUnique({ where: { email } });
-            if (exists) return res.status(400).json({ error: 'Email này đã được sử dụng!' });
-
-            await prisma.user.create({
+            const newUser = await prisma.user.create({
                 data: { name, email, phone, password }
             });
-
-            return res.status(200).json({ message: 'Đăng ký thành công! Hãy đăng nhập.' });
+            return res.status(200).json({ message: 'Đăng ký thành công', user: newUser });
         } catch (error) {
             return res.status(500).json({ error: 'Lỗi server khi đăng ký' });
         }
     }
 
-    // ==========================================
-    // 2. KHÁCH HÀNG ĐĂNG NHẬP
-    // ==========================================
-    if (method === 'POST' && action === 'login') {
+    // 2. ĐĂNG NHẬP
+    if (action === 'login') {
         try {
             const { email, password } = req.body;
             const user = await prisma.user.findUnique({ where: { email } });
@@ -42,8 +36,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 return res.status(400).json({ error: 'Email hoặc mật khẩu không đúng' });
             }
 
-            // Ký token (Dùng jwt nếu em có xài, hoặc token tự chế)
-            const token = `fake-jwt-token-${user.id}`;
+            // 👉 SỬ DỤNG MÁY IN VÉ JWT THẬT Ở ĐÂY
+            const token = jwt.sign(
+                { id: user.id, role: user.role }, 
+                JWT_SECRET, 
+                { expiresIn: '24h' }
+            );
 
             return res.status(200).json({
                 message: 'Đăng nhập thành công',
@@ -53,38 +51,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     name: user.name,
                     email: user.email,
                     phone: user.phone,
-                    role: user.role // 👉 EM CHỈ CẦN THÊM ĐÚNG DÒNG NÀY VÀO LÀ XONG!
+                    role: user.role
                 }
             });
         } catch (error) {
-            return res.status(500).json({ error: 'Lỗi server' });
+            return res.status(500).json({ error: 'Lỗi server khi đăng nhập' });
         }
     }
 
-    // ==========================================
-    // 3. LẤY LỊCH SỬ ĐẶT SÂN CỦA KHÁCH
-    // ==========================================
-    if (method === 'GET' && action === 'history') {
-        const authHeader = req.headers.authorization;
-        if (!authHeader) return res.status(401).json({ error: 'Bạn chưa đăng nhập!' });
-
-        const token = authHeader.split(' ')[1];
-        try {
-            // Giải mã vé xem khách hàng này là ai
-            const decoded: any = jwt.verify(token, SECRET);
-
-            // Lấy toàn bộ lịch đặt có chứa ID của vị khách đó
-            const history = await prisma.booking.findMany({
-                where: { userId: decoded.id },
-                include: { court: true },
-                orderBy: { createdAt: 'desc' } // Ưu tiên xếp lịch mới nhất lên đầu
-            });
-
-            return res.status(200).json(history);
-        } catch (err) {
-            return res.status(401).json({ error: 'Phiên đăng nhập hết hạn, vui lòng đăng nhập lại!' });
-        }
-    }
-
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(400).json({ error: 'Action không hợp lệ' });
 }
