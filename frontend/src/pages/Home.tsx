@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-
+import LoadingSpinner from '../components/LoadingSpinner';
 // Nhập các mảnh ghép Component
 import Navbar from '../components/client/Navbar';
 import AuthCard from '../components/client/AuthCard';
@@ -23,6 +23,7 @@ export default function Home() {
     const [selectedCourt, setSelectedCourt] = useState<Court | null>(null);
     const [viewCourt, setViewCourt] = useState<Court | null>(null);
 
+    const [isLoading, setIsLoading] = useState(true);
     // 👉 1. STATE CHO TÌM KIẾM VÀ LỌC (DANH MỤC)
     const [searchTerm, setSearchTerm] = useState('');
     const [priceFilter, setPriceFilter] = useState('all');
@@ -53,8 +54,15 @@ export default function Home() {
     }, [selectedCourt, bookDate]);
 
     const fetchCourts = async () => {
-        const res = await fetch('/api/courts');
-        if (res.ok) setCourts(await res.json());
+        setIsLoading(true); // 👉 Bật vòng xoay Loading lên
+        try {
+            const res = await fetch('/api/courts');
+            if (res.ok) setCourts(await res.json());
+        } catch (error) {
+            console.error("Lỗi khi tải sân:", error);
+        } finally {
+            setIsLoading(false); // 👉 Tải xong (hoặc lỗi) thì tắt vòng xoay đi
+        }
     };
 
     const handleAuth = async (e: FormEvent) => {
@@ -158,7 +166,9 @@ export default function Home() {
                         />
 
                         {/* Hiển thị danh sách sân sau khi lọc */}
-                        {filteredCourts.length === 0 ? (
+                        {isLoading ? (
+                            <LoadingSpinner /> // 👉 Nếu đang tải thì hiện vòng xoay
+                        ) : filteredCourts.length === 0 ? (
                             <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center">
                                 <span className="text-4xl block mb-3">🔍</span>
                                 <h3 className="text-lg font-bold text-slate-700">Không tìm thấy sân nào</h3>
@@ -200,7 +210,7 @@ export default function Home() {
                     viewCourt={viewCourt}
                     setViewCourt={setViewCourt}
                     setSelectedCourt={setSelectedCourt}
-                    currentUser={currentUser}    
+                    currentUser={currentUser}
                     refreshCourts={fetchCourts}
                 />
             )}

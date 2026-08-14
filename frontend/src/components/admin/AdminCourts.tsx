@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import toast from 'react-hot-toast';
+import LoadingSpinner from '../LoadingSpinner';
 
 interface Court { id: number; name: string; location: string; pricePerHour: number; imageUrl?: string; }
 
@@ -7,15 +8,17 @@ export default function AdminCourts() {
     const [courts, setCourts] = useState<Court[]>([]);
     const [courtFormData, setCourtFormData] = useState({ name: '', location: '', pricePerHour: '', imageUrl: '' });
     const [editingCourtId, setEditingCourtId] = useState<number | null>(null);
-
+    const [isLoading, setIsLoading] = useState(true);
     const getHeaders = () => ({
         'Authorization': `Bearer ${localStorage.getItem('customer_token')}`,
         'Content-Type': 'application/json'
     });
 
     const fetchCourts = async () => {
+        setIsLoading(true); // Bật loading
         const res = await fetch('/api/courts', { headers: getHeaders() });
         if (res.ok) setCourts(await res.json());
+        setIsLoading(false); // Tắt loading
     };
 
     useEffect(() => { fetchCourts(); }, []);
@@ -83,22 +86,27 @@ export default function AdminCourts() {
                 </form>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {courts.map(court => (
-                    <div key={court.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow flex flex-col justify-between">
-                        <div>
-                            {court.imageUrl && <img src={court.imageUrl} alt={court.name} className="w-full h-32 object-cover rounded-lg mb-4" />}
-                            <h4 className="text-xl font-bold text-slate-800">{court.name}</h4>
-                            <p className="text-slate-500 text-sm mt-2 flex items-center gap-1">📍 {court.location}</p>
-                            <p className="text-emerald-600 font-bold mt-4 text-lg">{court.pricePerHour.toLocaleString('vi-VN')} <span className="text-sm font-normal text-slate-500">đ/giờ</span></p>
+            {/* 👉 Phần hiển thị danh sách sân có bọc Loading */}
+            {isLoading ? (
+                <LoadingSpinner />
+            ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {courts.map(court => (
+                        <div key={court.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow flex flex-col justify-between">
+                            <div>
+                                {court.imageUrl && <img src={court.imageUrl} alt={court.name} className="w-full h-32 object-cover rounded-lg mb-4" />}
+                                <h4 className="text-xl font-bold text-slate-800">{court.name}</h4>
+                                <p className="text-slate-500 text-sm mt-2 flex items-center gap-1">📍 {court.location}</p>
+                                <p className="text-emerald-600 font-bold mt-4 text-lg">{court.pricePerHour.toLocaleString('vi-VN')} <span className="text-sm font-normal text-slate-500">đ/giờ</span></p>
+                            </div>
+                            <div className="mt-6 flex gap-2">
+                                <button onClick={() => handleEditCourtClick(court)} className="flex-1 py-2.5 bg-blue-50 text-blue-600 font-bold rounded-lg hover:bg-blue-600 hover:text-white transition-colors border border-blue-100">Sửa</button>
+                                <button onClick={() => handleDeleteCourt(court.id)} className="flex-1 py-2.5 bg-red-50 text-red-600 font-bold rounded-lg hover:bg-red-500 hover:text-white transition-colors border border-red-100">Xóa</button>
+                            </div>
                         </div>
-                        <div className="mt-6 flex gap-2">
-                            <button onClick={() => handleEditCourtClick(court)} className="flex-1 py-2.5 bg-blue-50 text-blue-600 font-bold rounded-lg hover:bg-blue-600 hover:text-white transition-colors border border-blue-100">Sửa</button>
-                            <button onClick={() => handleDeleteCourt(court.id)} className="flex-1 py-2.5 bg-red-50 text-red-600 font-bold rounded-lg hover:bg-red-500 hover:text-white transition-colors border border-red-100">Xóa</button>
-                        </div>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
