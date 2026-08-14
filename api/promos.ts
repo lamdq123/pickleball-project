@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { PrismaClient } from '@prisma/client';
-
+import { verifyAdmin } from './auth-middleware';
 const prisma = new PrismaClient();
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -21,6 +21,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // POST: Admin tạo mã mới
     if (req.method === 'POST') {
+        if (!verifyAdmin(req, res)) return;
         try {
             const { code, discount, isPercent } = req.body;
             const newPromo = await prisma.promoCode.create({
@@ -32,6 +33,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // DELETE: Admin xóa mã
     if (req.method === 'DELETE') {
+        if (!verifyAdmin(req, res)) return;
         try {
             const id = Number(req.query.id);
             await prisma.promoCode.delete({ where: { id } });

@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { PrismaClient } from '@prisma/client';
-
+import { verifyAdmin } from './auth-middleware';
 const prisma = new PrismaClient();
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -30,6 +30,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // DELETE: Admin xóa đánh giá xấu/spam
     if (req.method === 'DELETE') {
+        if (!verifyAdmin(req, res)) return;
         try {
             const id = Number(req.query.id);
             await prisma.review.delete({ where: { id } });
