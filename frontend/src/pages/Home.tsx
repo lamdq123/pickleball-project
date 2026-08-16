@@ -10,6 +10,9 @@ import QRModal from '../components/client/QRModal';
 import CourtFilter from '../components/client/CourtFilter';
 import CourtCard from '../components/client/CourtCard';
 import BookingModal from '../components/client/BookingModal';
+import Footer from '../components/client/Footer';
+
+
 interface Court { id: number; name: string; location: string; pricePerHour: number; imageUrl?: string; }
 
 export default function Home() {
@@ -223,6 +226,7 @@ export default function Home() {
                     onCancel={() => setShowQR(false)}
                 />
             )}
+            <Footer />
         </div>
     );
 }
