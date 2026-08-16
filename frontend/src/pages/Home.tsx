@@ -135,97 +135,99 @@ export default function Home() {
     });
 
     return (
-        <div className="min-h-screen bg-slate-50 font-sans text-slate-800 pb-20">
-            <Navbar currentUser={currentUser} onLogout={handleLogout} />
+        <div className="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col">
+            <main className="flex-1">
+                <Navbar currentUser={currentUser} onLogout={handleLogout} />
 
-            {!currentUser && (
-                <section className="bg-linear-to-br from-slate-800 to-blue-900 text-white py-20 px-6 text-center shadow-inner">
-                    <h1 className="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight">Trải nghiệm đặt sân Pickleball siêu tốc</h1>
-                    <p className="text-lg md:text-xl text-blue-200 mb-8 max-w-2xl mx-auto">Hệ thống thông minh giúp bạn tra cứu giờ trống, đặt sân và thanh toán tự động chỉ trong vài giây.</p>
-                </section>
-            )}
-
-            <div className="max-w-6xl mx-auto px-4 mt-10">
-                {!currentUser ? (
-                    <AuthCard
-                        authMode={authMode}
-                        authForm={authForm}
-                        setAuthMode={setAuthMode}
-                        setAuthForm={setAuthForm}
-                        onSubmit={handleAuth}
-                    />
-                ) : (
-                    <div className="animate-fade-in-up">
-                        <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-2xl font-bold text-slate-800 border-l-4 border-blue-600 pl-3">Danh sách sân</h2>
-                        </div>
-
-                        {/* 👉 3. GIAO DIỆN THANH TÌM KIẾM & LỌC (DANH MỤC) */}
-                        <CourtFilter
-                            searchTerm={searchTerm}
-                            setSearchTerm={setSearchTerm}
-                            priceFilter={priceFilter}
-                            setPriceFilter={setPriceFilter}
-                        />
-
-                        {/* Hiển thị danh sách sân sau khi lọc */}
-                        {isLoading ? (
-                            <LoadingSpinner /> // 👉 Nếu đang tải thì hiện vòng xoay
-                        ) : filteredCourts.length === 0 ? (
-                            <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center">
-                                <span className="text-4xl block mb-3">🔍</span>
-                                <h3 className="text-lg font-bold text-slate-700">Không tìm thấy sân nào</h3>
-                                <p className="text-slate-500">Thử đổi từ khóa tìm kiếm hoặc bỏ bộ lọc giá nhé!</p>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-                                {filteredCourts.map(court => (
-                                    <CourtCard
-                                        key={court.id}
-                                        court={court}
-                                        setViewCourt={setViewCourt}
-                                        setSelectedCourt={setSelectedCourt}
-                                    />
-                                ))}
-                            </div>
-                        )}
-                        {/* MODAL ĐẶT SÂN */}
-                        {selectedCourt && (
-                            <BookingModal
-                                selectedCourt={selectedCourt}
-                                bookDate={bookDate}
-                                setBookDate={setBookDate}
-                                timeSlot={timeSlot}
-                                setTimeSlot={setTimeSlot}
-                                bookedSlots={bookedSlots}
-                                TIME_SLOTS={TIME_SLOTS}
-                                onClose={() => setSelectedCourt(null)}
-                                onSubmit={handleInitBooking}
-                            />
-                        )}
-                    </div>
+                {!currentUser && (
+                    <section className="bg-linear-to-br from-slate-800 to-blue-900 text-white py-20 px-6 text-center shadow-inner">
+                        <h1 className="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight">Trải nghiệm đặt sân Pickleball siêu tốc</h1>
+                        <p className="text-lg md:text-xl text-blue-200 mb-8 max-w-2xl mx-auto">Hệ thống thông minh giúp bạn tra cứu giờ trống, đặt sân và thanh toán tự động chỉ trong vài giây.</p>
+                    </section>
                 )}
-            </div>
 
-            {/* MODAL CHI TIẾT SÂN */}
-            {viewCourt && (
-                <CourtModal
-                    viewCourt={viewCourt}
-                    setViewCourt={setViewCourt}
-                    setSelectedCourt={setSelectedCourt}
-                    currentUser={currentUser}
-                    refreshCourts={fetchCourts}
-                />
-            )}
+                <div className="max-w-6xl mx-auto px-4 mt-10">
+                    {!currentUser ? (
+                        <AuthCard
+                            authMode={authMode}
+                            authForm={authForm}
+                            setAuthMode={setAuthMode}
+                            setAuthForm={setAuthForm}
+                            onSubmit={handleAuth}
+                        />
+                    ) : (
+                        <div className="animate-fade-in-up">
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-2xl font-bold text-slate-800 border-l-4 border-blue-600 pl-3">Danh sách sân</h2>
+                            </div>
 
-            {/* MODAL QR THANH TOÁN */}
-            {showQR && (
-                <QRModal
-                    qrUrl={qrUrl}
-                    onConfirm={handleConfirmPayment}
-                    onCancel={() => setShowQR(false)}
-                />
-            )}
+                            {/* 👉 3. GIAO DIỆN THANH TÌM KIẾM & LỌC (DANH MỤC) */}
+                            <CourtFilter
+                                searchTerm={searchTerm}
+                                setSearchTerm={setSearchTerm}
+                                priceFilter={priceFilter}
+                                setPriceFilter={setPriceFilter}
+                            />
+
+                            {/* Hiển thị danh sách sân sau khi lọc */}
+                            {isLoading ? (
+                                <LoadingSpinner /> // 👉 Nếu đang tải thì hiện vòng xoay
+                            ) : filteredCourts.length === 0 ? (
+                                <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center">
+                                    <span className="text-4xl block mb-3">🔍</span>
+                                    <h3 className="text-lg font-bold text-slate-700">Không tìm thấy sân nào</h3>
+                                    <p className="text-slate-500">Thử đổi từ khóa tìm kiếm hoặc bỏ bộ lọc giá nhé!</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                                    {filteredCourts.map(court => (
+                                        <CourtCard
+                                            key={court.id}
+                                            court={court}
+                                            setViewCourt={setViewCourt}
+                                            setSelectedCourt={setSelectedCourt}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                            {/* MODAL ĐẶT SÂN */}
+                            {selectedCourt && (
+                                <BookingModal
+                                    selectedCourt={selectedCourt}
+                                    bookDate={bookDate}
+                                    setBookDate={setBookDate}
+                                    timeSlot={timeSlot}
+                                    setTimeSlot={setTimeSlot}
+                                    bookedSlots={bookedSlots}
+                                    TIME_SLOTS={TIME_SLOTS}
+                                    onClose={() => setSelectedCourt(null)}
+                                    onSubmit={handleInitBooking}
+                                />
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* MODAL CHI TIẾT SÂN */}
+                {viewCourt && (
+                    <CourtModal
+                        viewCourt={viewCourt}
+                        setViewCourt={setViewCourt}
+                        setSelectedCourt={setSelectedCourt}
+                        currentUser={currentUser}
+                        refreshCourts={fetchCourts}
+                    />
+                )}
+
+                {/* MODAL QR THANH TOÁN */}
+                {showQR && (
+                    <QRModal
+                        qrUrl={qrUrl}
+                        onConfirm={handleConfirmPayment}
+                        onCancel={() => setShowQR(false)}
+                    />
+                )}
+            </main>
             <Footer />
         </div>
 
