@@ -1,4 +1,7 @@
-interface Court { id: number; name: string; location: string; pricePerHour: number; imageUrl?: string; reviews?: any[]; }
+interface Court {
+    id: number; name: string; location: string; pricePerHour: number; imageUrl?: string; reviews?: any[];
+    goldenHourStart?: string | null; goldenHourEnd?: string | null; goldenDiscount?: number | null;
+}
 interface CourtCardProps {
     court: Court;
     setViewCourt: (court: Court) => void;
@@ -17,13 +20,23 @@ export default function CourtCard({ court, setViewCourt, setSelectedCourt }: Cou
         ? (reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews).toFixed(1)
         : "5.0";
 
+    const hasGoldenHour = !!court.goldenHourStart && !!court.goldenHourEnd && !!court.goldenDiscount;
+    const goldenPrice = hasGoldenHour ? Math.round(court.pricePerHour * (100 - (court.goldenDiscount ?? 0)) / 100) : null;
+
     return (
         <div className="bg-white rounded-xl shadow-md border border-slate-100 p-5 hover:shadow-xl transition-shadow flex flex-col justify-between group">
             <div>
                 <div className="h-40 bg-slate-200 rounded-lg mb-4 overflow-hidden relative">
                     <img src={court.imageUrl || DEFAULT_COURT_IMG} alt={court.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                    <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded text-xs font-bold text-white flex items-center gap-1">
-                        <span className="text-amber-400">★</span> {realRating}
+                    <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
+                        <div className="bg-black/60 backdrop-blur-md px-2 py-1 rounded text-xs font-bold text-white flex items-center gap-1">
+                            <span className="text-amber-400">★</span> {realRating}
+                        </div>
+                        {hasGoldenHour && (
+                            <div className="bg-amber-500/90 backdrop-blur-md px-2 py-1 rounded text-[10px] font-bold text-white uppercase tracking-wide shadow-sm">
+                                Giờ vàng
+                            </div>
+                        )}
                     </div>
                 </div>
                 <h3 className="text-xl font-bold text-slate-800 mb-1 line-clamp-1">{court.name}</h3>
@@ -38,7 +51,21 @@ export default function CourtCard({ court, setViewCourt, setSelectedCourt }: Cou
             </div>
 
             <div>
-                <p className="text-blue-600 font-extrabold text-lg mb-4">{court.pricePerHour.toLocaleString('vi-VN')} đ <span className="text-sm text-slate-500 font-normal">/giờ</span></p>
+                <p className="text-blue-600 font-extrabold text-lg mb-4">
+                    {goldenPrice ? (
+                        <>
+                            <span className="text-slate-400 line-through text-base mr-2">
+                                {court.pricePerHour.toLocaleString('vi-VN')} đ
+                            </span>
+                            <span>{goldenPrice.toLocaleString('vi-VN')} đ</span>
+                            <span className="text-xs text-amber-600 ml-2 font-bold">-{court.goldenDiscount}%</span>
+                        </>
+                    ) : (
+                        <>
+                            {court.pricePerHour.toLocaleString('vi-VN')} đ <span className="text-sm text-slate-500 font-normal">/giờ</span>
+                        </>
+                    )}
+                </p>
                 <div className="flex gap-2">
                     <button onClick={() => setViewCourt(court)} className="flex-1 py-2.5 bg-slate-100 text-slate-700 rounded-lg font-semibold hover:bg-slate-200 transition-colors border border-slate-200">
                         Chi tiết

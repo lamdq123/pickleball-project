@@ -29,9 +29,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!verifyAdmin(req, res)) return;
 
         try {
-            const { name, location, pricePerHour, imageUrl } = req.body;
+            // 👉 Lấy thêm 3 thông số giờ vàng từ body
+            const { name, location, pricePerHour, imageUrl, goldenHourStart, goldenHourEnd, goldenDiscount } = req.body;
+
             const newCourt = await prisma.court.create({
-                data: { name, location, pricePerHour: Number(pricePerHour), imageUrl: imageUrl || null },
+                data: {
+                    name, location, pricePerHour: Number(pricePerHour), imageUrl: imageUrl || null,
+                    goldenHourStart: goldenHourStart || null,
+                    goldenHourEnd: goldenHourEnd || null,
+                    goldenDiscount: Number(goldenDiscount) || 0
+                }
             });
             return res.status(200).json(newCourt);
         } catch (error) {
@@ -74,14 +81,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'PUT') {
         if (!verifyAdmin(req, res)) return;
         try {
-            const { id, name, location, pricePerHour, imageUrl } = req.body;
+            const { id, name, location, pricePerHour, imageUrl, goldenHourStart, goldenHourEnd, goldenDiscount } = req.body;
             const updatedCourt = await prisma.court.update({
                 where: { id: Number(id) },
                 data: {
-                    name,
-                    location,
-                    pricePerHour: Number(pricePerHour),
-                    imageUrl: imageUrl || null
+                    name, location, pricePerHour: Number(pricePerHour), imageUrl: imageUrl || null,
+                    goldenHourStart: goldenHourStart || null,
+                    goldenHourEnd: goldenHourEnd || null,
+                    goldenDiscount: Number(goldenDiscount) || 0
                 }
             });
             return res.status(200).json(updatedCourt);

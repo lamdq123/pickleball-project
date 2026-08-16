@@ -20,15 +20,19 @@ model User {
 }
 
 model Court {
-  id           Int       @id @default(autoincrement())
-  name         String
-  location     String
-  pricePerHour Float
-  imageUrl     String?   // 👉 EM THÊM ĐÚNG DÒNG NÀY VÀO LÀ ĐƯỢC
-   
-  bookings     Booking[]
-  reviews      Review[]
-  createdAt    DateTime  @default(now())
+  id              Int       @id @default(autoincrement())
+  name            String
+  location        String
+  pricePerHour    Float
+  imageUrl        String?
+  // 👉 THÊM 3 DÒNG NÀY ĐỂ LƯU GIỜ VÀNG
+  goldenHourStart String?   // Ví dụ: "16:00"
+  goldenHourEnd   String?   // Ví dụ: "19:00"
+  goldenDiscount  Int?      @default(0) // Ví dụ: 10 (%)
+
+  bookings        Booking[]
+  reviews         Review[]
+  createdAt       DateTime  @default(now())
 }
 
 // BẢNG MỚI: Lưu trữ thông tin Đặt Sân

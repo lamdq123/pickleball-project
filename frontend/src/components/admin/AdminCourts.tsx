@@ -2,11 +2,17 @@ import { useEffect, useState, type FormEvent } from 'react';
 import toast from 'react-hot-toast';
 import LoadingSpinner from '../LoadingSpinner';
 
-interface Court { id: number; name: string; location: string; pricePerHour: number; imageUrl?: string; }
+interface Court {
+    id: number; name: string; location: string; pricePerHour: number; imageUrl?: string;
+    goldenHourStart?: string; goldenHourEnd?: string; goldenDiscount?: number; // 👉 Thêm 3 dòng này
+}
 
 export default function AdminCourts() {
     const [courts, setCourts] = useState<Court[]>([]);
-    const [courtFormData, setCourtFormData] = useState({ name: '', location: '', pricePerHour: '', imageUrl: '' });
+    const [courtFormData, setCourtFormData] = useState({
+        name: '', location: '', pricePerHour: '', imageUrl: '',
+        goldenHourStart: '', goldenHourEnd: '', goldenDiscount: ''
+    });
     const [editingCourtId, setEditingCourtId] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const getHeaders = () => ({
@@ -32,7 +38,7 @@ export default function AdminCourts() {
 
         if (res.ok) {
             toast.success(editingCourtId ? "Đã cập nhật thông tin sân!" : "Thêm sân mới thành công!");
-            setCourtFormData({ name: '', location: '', pricePerHour: '', imageUrl: '' });
+            setCourtFormData({ name: '', location: '', pricePerHour: '', imageUrl: '', goldenHourStart: '', goldenHourEnd: '', goldenDiscount: '' });
             setEditingCourtId(null);
             fetchCourts();
         } else toast.error((await res.json()).error);
@@ -46,7 +52,13 @@ export default function AdminCourts() {
 
     const handleEditCourtClick = (court: Court) => {
         setEditingCourtId(court.id);
-        setCourtFormData({ name: court.name, location: court.location, pricePerHour: court.pricePerHour.toString(), imageUrl: court.imageUrl || '' });
+        setCourtFormData({
+            name: court.name, location: court.location, pricePerHour: court.pricePerHour.toString(), imageUrl: court.imageUrl || '',
+            // 👉 Lấy dữ liệu cũ đổ vào Form
+            goldenHourStart: court.goldenHourStart || '',
+            goldenHourEnd: court.goldenHourEnd || '',
+            goldenDiscount: court.goldenDiscount?.toString() || ''
+        });
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -73,12 +85,24 @@ export default function AdminCourts() {
                         <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Link Ảnh (Tùy chọn)</label>
                         <input type="url" placeholder="https://..." value={courtFormData.imageUrl} onChange={e => setCourtFormData({ ...courtFormData, imageUrl: e.target.value })} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                     </div>
+                    <div className="w-full">
+                        <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Giờ Vàng - Bắt đầu</label>
+                        <input type="time" value={courtFormData.goldenHourStart} onChange={e => setCourtFormData({ ...courtFormData, goldenHourStart: e.target.value })} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                    </div>
+                    <div className="w-full">
+                        <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Giờ Vàng - Kết thúc</label>
+                        <input type="time" value={courtFormData.goldenHourEnd} onChange={e => setCourtFormData({ ...courtFormData, goldenHourEnd: e.target.value })} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                    </div>
+                    <div className="w-full">
+                        <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Giảm giá (%)</label>
+                        <input type="number" min="0" max="100" value={courtFormData.goldenDiscount} onChange={e => setCourtFormData({ ...courtFormData, goldenDiscount: e.target.value })} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                    </div>
                     <div className="lg:col-span-4 mt-2 flex gap-3">
                         <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors shadow-md">
                             {editingCourtId ? 'LƯU THAY ĐỔI' : 'THÊM SÂN MỚI'}
                         </button>
                         {editingCourtId && (
-                            <button type="button" onClick={() => { setEditingCourtId(null); setCourtFormData({ name: '', location: '', pricePerHour: '', imageUrl: '' }); }} className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 px-8 rounded-lg">
+                            <button type="button" onClick={() => { setEditingCourtId(null); setCourtFormData({ name: '', location: '', pricePerHour: '', imageUrl: '', goldenHourStart: '', goldenHourEnd: '', goldenDiscount: '' }); }} className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 px-8 rounded-lg">
                                 HỦY
                             </button>
                         )}

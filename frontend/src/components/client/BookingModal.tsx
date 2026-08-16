@@ -1,7 +1,10 @@
 import { type FormEvent, useState } from 'react';
 import toast from 'react-hot-toast';
 
-interface Court { id: number; name: string; location: string; pricePerHour: number; imageUrl?: string; }
+interface Court {
+    id: number; name: string; location: string; pricePerHour: number; imageUrl?: string;
+    goldenHourStart?: string | null; goldenHourEnd?: string | null; goldenDiscount?: number | null;
+}
 
 interface BookingModalProps {
     selectedCourt: Court;
@@ -52,8 +55,29 @@ export default function BookingModal({
         }
     };
 
+    const toMinutes = (time: string) => {
+        const [h, m] = time.split(':').map(Number);
+        return h * 60 + m;
+    };
+
+    const isGoldenHourSlot = (slot: string) => {
+        if (!selectedCourt.goldenHourStart || !selectedCourt.goldenHourEnd) return false;
+
+        const [slotStart, slotEnd] = slot.split(' - ');
+        const slotStartMinutes = toMinutes(slotStart);
+        const slotEndMinutes = toMinutes(slotEnd);
+        const goldenStartMinutes = toMinutes(selectedCourt.goldenHourStart);
+        const goldenEndMinutes = toMinutes(selectedCourt.goldenHourEnd);
+
+        return slotStartMinutes < goldenEndMinutes && slotEndMinutes > goldenStartMinutes;
+    };
+
+    const goldenDiscountAmount = isGoldenHourSlot(timeSlot) && selectedCourt.goldenDiscount
+        ? (selectedCourt.pricePerHour * selectedCourt.goldenDiscount) / 100
+        : 0;
+
     // Tính tiền thanh toán cuối cùng (Không được để số âm)
-    const finalPrice = Math.max(selectedCourt.pricePerHour - discountAmount, 0);
+    const finalPrice = Math.max(selectedCourt.pricePerHour - discountAmount - goldenDiscountAmount, 0);
 
     return (
         <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
@@ -72,6 +96,11 @@ export default function BookingModal({
                 <div className="bg-blue-50/50 p-4 rounded-2xl mb-6 border border-blue-100/50">
                     <p className="text-slate-500 text-sm font-medium mb-1">Sân đang chọn:</p>
                     <p className="text-lg font-bold text-blue-700 mb-3">{selectedCourt.name}</p>
+                    {selectedCourt.goldenHourStart && selectedCourt.goldenHourEnd && selectedCourt.goldenDiscount ? (
+                        <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm">
+                            <span className="font-bold text-amber-700">Giờ vàng:</span> {selectedCourt.goldenHourStart} - {selectedCourt.goldenHourEnd} • Giảm {selectedCourt.goldenDiscount}%
+                        </div>
+                    ) : null}
                     <div className="flex justify-between items-center pt-3 border-t border-blue-100">
                         <span className="text-slate-600 font-medium">Đơn giá:</span>
                         <span className="text-lg font-extrabold text-slate-800">{selectedCourt.pricePerHour.toLocaleString('vi-VN')} đ/giờ</span>
@@ -91,9 +120,17 @@ export default function BookingModal({
                                 <option value="" disabled>-- Chọn giờ --</option>
                                 {TIME_SLOTS.map(slot => {
                                     const isBooked = bookedSlots.includes(slot);
+                                    const isGolden = isGoldenHourSlot(slot);
                                     return (
-                                        <option key={slot} value={slot} disabled={isBooked} className={isBooked ? 'text-red-400 line-through' : 'text-slate-800'}>
-                                            {slot} {isBooked ? '(Hết chỗ)' : ''}
+                                        <option
+                                            key={slot}
+                                            value={slot}
+                                            disabled={isBooked}
+                                            className={isBooked ? 'text-red-400 line-through' : 'text-slate-800'}
+                                        >
+                                            {slot}
+                                            {isGolden ? ' • Giờ vàng' : ''}
+                                            {isBooked ? ' (Hết chỗ)' : ''}
                                         </option>
                                     );
                                 })}
@@ -126,10 +163,17 @@ export default function BookingModal({
                     <div className="flex justify-between items-end mt-4 pt-4 border-t border-slate-200">
                         <span className="text-slate-500 font-bold uppercase tracking-wider">Tổng thanh toán:</span>
                         <div className="text-right">
-                            {discountAmount > 0 && (
-                                <p className="text-sm text-slate-400 line-through mb-0.5">{selectedCourt.pricePerHour.toLocaleString('vi-VN')} đ</p>
+                            {(discountAmount > 0 || goldenDiscountAmount > 0) && (
+                                <p className="text-sm text-slate-400 line-through mb-0.5">
+                                    {selectedCourt.pricePerHour.toLocaleString('vi-VN')} đ
+                                </p>
                             )}
                             <p className="text-3xl font-extrabold text-red-500">{finalPrice.toLocaleString('vi-VN')} đ</p>
+                            {goldenDiscountAmount > 0 && (
+                                <p className="text-xs text-amber-600 font-semibold mt-1">
+                                    Giờ vàng: giảm {(selectedCourt.goldenDiscount ?? 0)}%
+                                </p>
+                            )}
                         </div>
                     </div>
 
