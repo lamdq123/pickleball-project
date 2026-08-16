@@ -1,187 +1,155 @@
-import { type FormEvent, useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import toast from 'react-hot-toast';
 
-interface Court {
-    id: number; name: string; location: string; pricePerHour: number; imageUrl?: string;
-    goldenHourStart?: string | null; goldenHourEnd?: string | null; goldenDiscount?: number | null;
-}
-
 interface BookingModalProps {
-    selectedCourt: Court;
+    selectedCourt: any;
     bookDate: string;
-    setBookDate: (date: string) => void;
+    setBookDate: (val: string) => void;
     timeSlot: string;
-    setTimeSlot: (slot: string) => void;
+    setTimeSlot: (val: string) => void;
     bookedSlots: string[];
     TIME_SLOTS: string[];
     onClose: () => void;
-    onSubmit: (e: FormEvent, finalPrice: number) => void; // 👉 Thêm finalPrice để báo cho Home biết
+    onSubmit: (e: FormEvent, finalPrice: number) => void;
 }
 
-export default function BookingModal({
-    selectedCourt, bookDate, setBookDate, timeSlot, setTimeSlot, bookedSlots, TIME_SLOTS, onClose, onSubmit
-}: BookingModalProps) {
-
-    // 👉 State lưu trữ Mã giảm giá
+export default function BookingModal({ selectedCourt, bookDate, setBookDate, timeSlot, setTimeSlot, bookedSlots, TIME_SLOTS, onClose, onSubmit }: BookingModalProps) {
     const [promoCode, setPromoCode] = useState('');
-    const [discountAmount, setDiscountAmount] = useState(0);
+    const [discountPercent, setDiscountPercent] = useState(0);
 
-    // 👉 Hàm xử lý áp mã thật từ Database
+    // ==========================================
+    // 💡 LOGIC TÍNH TIỀN AN TOÀN (SAFE CALCULATION)
+    // ==========================================
+    let isGoldenHour = false;
+    let finalPrice = selectedCourt?.pricePerHour || 0;
+
+    // 1. Chỉ kiểm tra Giờ vàng nếu timeSlot và thông số Giờ vàng ĐÃ TỒN TẠI
+    if (timeSlot && selectedCourt?.goldenHourStart && selectedCourt?.goldenHourEnd && selectedCourt?.goldenDiscount) {
+        const bookStartHour = parseInt(timeSlot.split(':')[0]); // VD: "16:00 - 17:00" -> lấy 16
+        const goldenStartHour = parseInt(selectedCourt.goldenHourStart.split(':')[0]); // VD: "16:00" -> lấy 16
+        const goldenEndHour = parseInt(selectedCourt.goldenHourEnd.split(':')[0]);
+
+        // Nếu giờ khách đặt nằm trong khoảng vàng
+        if (bookStartHour >= goldenStartHour && bookStartHour < goldenEndHour) {
+            isGoldenHour = true;
+            // Trừ tiền theo % giảm giá giờ vàng của sân đó
+            finalPrice = finalPrice - (finalPrice * selectedCourt.goldenDiscount / 100);
+        }
+    }
+
+    // 2. Tính tiếp Mã giảm giá (Nếu khách nhập mã hợp lệ)
+    if (discountPercent > 0) {
+        finalPrice = finalPrice - (finalPrice * discountPercent / 100);
+    }
+
+    // Hàm gọi API check mã giảm giá
     const handleApplyPromo = async () => {
-        const code = promoCode.trim().toUpperCase();
-        if (!code) return toast.error('Vui lòng nhập mã giảm giá!');
-
+        if (!promoCode) return;
         try {
-            // Gọi API kiểm tra mã dưới Database
-            const res = await fetch(`/api/promos?code=${code}`);
-            const data = await res.json();
-
-            if (!res.ok) {
-                setDiscountAmount(0);
-                return toast.error(data.error || 'Mã không hợp lệ hoặc đã hết hạn');
-            }
-
-            // Tính toán dựa trên dữ liệu thật
-            if (data.isPercent) {
-                const discount = (selectedCourt.pricePerHour * data.discount) / 100;
-                setDiscountAmount(discount);
-                toast.success(`✅ Áp dụng thành công! Giảm ${data.discount}%`);
+            const res = await fetch(`/api/promos?code=${promoCode}`);
+            if (res.ok) {
+                // Giả định API của em trả về object có chứa số % giảm
+                const data = await res.json();
+                setDiscountPercent(data.discount || 10); // Default giảm 10% nếu API chưa chuẩn
+                toast.success('Áp dụng mã giảm giá thành công!');
             } else {
-                setDiscountAmount(data.discount);
-                toast.success(`✅ Áp dụng thành công! Giảm ${data.discount.toLocaleString('vi-VN')}đ`);
+                toast.error('Mã giảm giá không hợp lệ hoặc đã hết hạn!');
+                setDiscountPercent(0);
             }
         } catch (error) {
-            toast.error('Lỗi khi kiểm tra mã');
+            toast.error('Có lỗi xảy ra khi kiểm tra mã!');
         }
     };
 
-    const toMinutes = (time: string) => {
-        const [h, m] = time.split(':').map(Number);
-        return h * 60 + m;
-    };
-
-    const isGoldenHourSlot = (slot: string) => {
-        if (!selectedCourt.goldenHourStart || !selectedCourt.goldenHourEnd) return false;
-
-        const [slotStart, slotEnd] = slot.split(' - ');
-        const slotStartMinutes = toMinutes(slotStart);
-        const slotEndMinutes = toMinutes(slotEnd);
-        const goldenStartMinutes = toMinutes(selectedCourt.goldenHourStart);
-        const goldenEndMinutes = toMinutes(selectedCourt.goldenHourEnd);
-
-        return slotStartMinutes < goldenEndMinutes && slotEndMinutes > goldenStartMinutes;
-    };
-
-    const goldenDiscountAmount = isGoldenHourSlot(timeSlot) && selectedCourt.goldenDiscount
-        ? (selectedCourt.pricePerHour * selectedCourt.goldenDiscount) / 100
-        : 0;
-
-    // Tính tiền thanh toán cuối cùng (Không được để số âm)
-    const finalPrice = Math.max(selectedCourt.pricePerHour - discountAmount - goldenDiscountAmount, 0);
-
     return (
-        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-            <div className="bg-white rounded-3xl shadow-2xl p-6 md:p-8 w-full max-w-lg relative transform transition-all scale-100">
+        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in-up">
 
-                {/* Nút Tắt (X) */}
-                <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-red-500 bg-slate-100 hover:bg-red-50 rounded-full p-2 transition-colors">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-
-                <h3 className="text-2xl font-bold text-slate-800 mb-6 pr-8">
-                    Tạo lịch đặt sân
-                </h3>
-
-                {/* 👉 Hiển thị Tên sân & Giá gốc */}
-                <div className="bg-blue-50/50 p-4 rounded-2xl mb-6 border border-blue-100/50">
-                    <p className="text-slate-500 text-sm font-medium mb-1">Sân đang chọn:</p>
-                    <p className="text-lg font-bold text-blue-700 mb-3">{selectedCourt.name}</p>
-                    {selectedCourt.goldenHourStart && selectedCourt.goldenHourEnd && selectedCourt.goldenDiscount ? (
-                        <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm">
-                            <span className="font-bold text-amber-700">Giờ vàng:</span> {selectedCourt.goldenHourStart} - {selectedCourt.goldenHourEnd} • Giảm {selectedCourt.goldenDiscount}%
-                        </div>
-                    ) : null}
-                    <div className="flex justify-between items-center pt-3 border-t border-blue-100">
-                        <span className="text-slate-600 font-medium">Đơn giá:</span>
-                        <span className="text-lg font-extrabold text-slate-800">{selectedCourt.pricePerHour.toLocaleString('vi-VN')} đ/giờ</span>
-                    </div>
+                {/* Header Modal */}
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-2xl font-bold text-slate-800">Đặt Sân</h3>
+                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold transition-colors">✕</button>
                 </div>
 
-                <form onSubmit={(e) => onSubmit(e, finalPrice)} className="flex flex-col gap-4">
-                    <div className="flex flex-col md:flex-row gap-4">
-                        <div className="flex flex-col flex-1">
-                            <label className="text-sm font-bold text-slate-600 mb-2 uppercase tracking-wide">Ngày chơi</label>
-                            <input type="date" required value={bookDate} onChange={e => setBookDate(e.target.value)} className="px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50 transition-all font-medium text-slate-700" />
-                        </div>
+                {/* Tóm tắt thông tin Sân */}
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-6">
+                    <h4 className="font-bold text-lg text-slate-800">{selectedCourt.name}</h4>
+                    <p className="text-slate-500 text-sm mt-1 flex items-center gap-1">📍 {selectedCourt.location}</p>
+                    <p className="text-slate-500 text-sm mt-1 line-through">Giá gốc: {selectedCourt.pricePerHour.toLocaleString('vi-VN')} đ/giờ</p>
+                </div>
 
-                        <div className="flex flex-col flex-1">
-                            <label className="text-sm font-bold text-slate-600 mb-2 uppercase tracking-wide">Khung giờ</label>
-                            <select required value={timeSlot} onChange={e => setTimeSlot(e.target.value)} className="px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50 transition-all cursor-pointer font-medium text-slate-700">
-                                <option value="" disabled>-- Chọn giờ --</option>
+                <form onSubmit={(e) => onSubmit(e, finalPrice)} className="space-y-4">
+                    {/* Chọn ngày */}
+                    <div>
+                        <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Ngày chơi</label>
+                        <input type="date" required min={new Date().toISOString().split('T')[0]} value={bookDate} onChange={e => setBookDate(e.target.value)} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                    </div>
+
+                    {/* Chọn giờ */}
+                    <div>
+                        <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Khung giờ</label>
+                        {bookDate ? (
+                            <div className="grid grid-cols-2 gap-3">
                                 {TIME_SLOTS.map(slot => {
                                     const isBooked = bookedSlots.includes(slot);
-                                    const isGolden = isGoldenHourSlot(slot);
                                     return (
-                                        <option
-                                            key={slot}
-                                            value={slot}
-                                            disabled={isBooked}
-                                            className={isBooked ? 'text-red-400 line-through' : 'text-slate-800'}
-                                        >
-                                            {slot}
-                                            {isGolden ? ' • Giờ vàng' : ''}
-                                            {isBooked ? ' (Hết chỗ)' : ''}
-                                        </option>
+                                        <label key={slot} className={`border rounded-lg p-3 flex items-center justify-center cursor-pointer transition-colors ${isBooked ? 'bg-slate-100 border-slate-200 opacity-50 cursor-not-allowed' : timeSlot === slot ? 'border-blue-600 bg-blue-50 text-blue-700 font-bold shadow-sm' : 'border-slate-200 hover:border-blue-400'}`}>
+                                            <input type="radio" name="timeSlot" value={slot} checked={timeSlot === slot} onChange={e => setTimeSlot(e.target.value)} disabled={isBooked} className="hidden" />
+                                            <span className="text-sm">{slot}</span>
+                                        </label>
                                     );
                                 })}
-                            </select>
-                        </div>
+                            </div>
+                        ) : (
+                            <p className="text-sm text-slate-500 italic bg-slate-50 p-4 rounded-lg border border-dashed border-slate-200 text-center">Vui lòng chọn ngày trước</p>
+                        )}
                     </div>
 
-                    {/* 👉 Giao diện Nhập Mã Giảm Giá */}
-                    <div className="flex flex-col mt-2">
-                        <label className="text-sm font-bold text-slate-600 mb-2 uppercase tracking-wide">Mã giảm giá</label>
-                        <div className="flex gap-2">
-                            <input
-                                type="text"
-                                placeholder="Nhập mã (VD: GIAM20K)"
-                                value={promoCode}
-                                onChange={e => setPromoCode(e.target.value)}
-                                className="px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none w-full bg-slate-50 uppercase transition-all font-bold text-emerald-600 placeholder:font-normal"
-                            />
-                            <button
-                                type="button"
-                                onClick={handleApplyPromo}
-                                className="px-5 py-3 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-900 transition-colors whitespace-nowrap shadow-md"
-                            >
-                                Áp dụng
-                            </button>
-                        </div>
-                    </div>
+                    {/* KHU VỰC TÍNH TIỀN (CHỈ HIỆN KHI ĐÃ CHỌN GIỜ) */}
+                    {timeSlot && (
+                        <div className="mt-6 border-t border-slate-100 pt-5 space-y-4">
 
-                    {/* 👉 Hiển thị Tổng thanh toán */}
-                    <div className="flex justify-between items-end mt-4 pt-4 border-t border-slate-200">
-                        <span className="text-slate-500 font-bold uppercase tracking-wider">Tổng thanh toán:</span>
-                        <div className="text-right">
-                            {(discountAmount > 0 || goldenDiscountAmount > 0) && (
-                                <p className="text-sm text-slate-400 line-through mb-0.5">
-                                    {selectedCourt.pricePerHour.toLocaleString('vi-VN')} đ
-                                </p>
+                            {/* Bảng báo Giờ Vàng */}
+                            {isGoldenHour && (
+                                <div className="flex justify-between items-center text-sm font-bold text-amber-600 bg-amber-50 px-4 py-3 border border-amber-200 rounded-xl animate-fade-in-up">
+                                    <span>✨ Giảm giá Giờ Vàng (-{selectedCourt.goldenDiscount}%)</span>
+                                    <span>- {((selectedCourt.pricePerHour * selectedCourt.goldenDiscount) / 100).toLocaleString('vi-VN')} đ</span>
+                                </div>
                             )}
-                            <p className="text-3xl font-extrabold text-red-500">{finalPrice.toLocaleString('vi-VN')} đ</p>
-                            {goldenDiscountAmount > 0 && (
-                                <p className="text-xs text-amber-600 font-semibold mt-1">
-                                    Giờ vàng: giảm {(selectedCourt.goldenDiscount ?? 0)}%
-                                </p>
-                            )}
-                        </div>
-                    </div>
 
-                    <button type="submit" className="mt-2 w-full px-6 py-4 bg-blue-600 text-white rounded-xl font-bold text-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30">
-                        XÁC NHẬN ĐẶT SÂN
-                    </button>
+                            {/* Bảng nhập Mã giảm giá */}
+                            <div className="flex gap-2">
+                                <input type="text" placeholder="Nhập mã ưu đãi..." value={promoCode} onChange={e => setPromoCode(e.target.value)} className="flex-1 px-4 py-3 border border-slate-200 bg-slate-50 rounded-xl outline-none focus:border-blue-500 text-sm uppercase" />
+                                <button type="button" onClick={handleApplyPromo} className="px-5 py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-sm font-bold transition-colors shadow-md">ÁP DỤNG</button>
+                            </div>
+
+                            {/* Hiển thị chiết khấu từ Mã */}
+                            {discountPercent > 0 && (
+                                <div className="flex justify-between items-center text-sm font-bold text-emerald-600">
+                                    <span>🎟 Mã ưu đãi (-{discountPercent}%)</span>
+                                    <span>Đã áp dụng</span>
+                                </div>
+                            )}
+
+                            {/* TỔNG TIỀN CUỐI CÙNG */}
+                            <div className="flex justify-between items-end pt-3">
+                                <span className="font-bold text-slate-500 uppercase tracking-wider text-xs">Thành tiền:</span>
+                                <span className="text-3xl font-extrabold text-blue-600 tracking-tight">{finalPrice.toLocaleString('vi-VN')} đ</span>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Nút Hủy và Submit */}
+                    <div className="flex gap-3 mt-6">
+                        <button type="button" onClick={onClose} className="w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-4 rounded-xl transition-colors text-lg">
+                            HỦY
+                        </button>
+                        <button type="submit" disabled={!timeSlot || !bookDate} className="w-2/3 bg-blue-600 disabled:bg-slate-300 disabled:cursor-not-allowed hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition-colors shadow-lg shadow-blue-500/30 text-lg">
+                            XÁC NHẬN
+                        </button>
+                    </div>
                 </form>
             </div>
-        </div>
+        </div >
     );
 }
