@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { toast } from 'react-hot-toast/headless';
 
 interface Court { id: number; name: string; location: string; pricePerHour: number; imageUrl?: string; }
 interface Booking { id: number; court: Court; bookDate: string; timeSlot: string; createdAt: string; }
@@ -22,19 +23,37 @@ function Profile() {
     }, [currentUser, navigate]);
 
     const fetchHistory = async () => {
-        setIsLoading(true);
         try {
-            const res = await fetch('/api/customer?action=history', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) setHistory(await res.json());
-            else {
-                localStorage.removeItem('customer_token');
-                localStorage.removeItem('customer_info');
+            const token = localStorage.getItem('customer_token');
+            if (!token) {
                 navigate('/');
+                return;
             }
-        } finally {
-            setIsLoading(false);
+
+            // 👉 SỬA LẠI ĐƯỜNG DẪN Ở ĐÂY: Gọi vào /api/bookings thay vì /api/customer
+            const res = await fetch('/api/bookings', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setBookings(data); // Lưu dữ liệu lịch sử đặt sân vào state
+            } else {
+                // Chỉ "đá" người dùng ra ngoài nếu lỗi là 401 (Hết hạn Token/Chưa đăng nhập)
+                if (res.status === 401) {
+                    toast.error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại!");
+                    localStorage.removeItem('customer_token');
+                    localStorage.removeItem('customer_info');
+                    navigate('/');
+                }
+            }
+        } catch (error) {
+            console.error("Lỗi tải lịch sử đặt sân:", error);
+            toast.error("Không thể tải dữ liệu!");
         }
     };
 
