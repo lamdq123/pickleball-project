@@ -3,7 +3,8 @@ import { Toaster } from 'react-hot-toast';
 import Home from './pages/Home';
 import Admin from './pages/Admin';
 import Profile from './pages/Profile';
-
+import Pricing from './pages/Pricing';
+import Guide from './pages/Guide';
 // ==========================================
 // COMPONENT TRẠM GÁC (Bảo vệ trang Admin)
 // ==========================================
@@ -44,6 +45,8 @@ function App() {
           } />
           {/* Cổng Admin có tham số động (Ví dụ: /admin/courts) */}
           <Route path="/admin/:tab" element={<Admin />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/guide" element={<Guide />} />
         </Routes>
 
       </div>

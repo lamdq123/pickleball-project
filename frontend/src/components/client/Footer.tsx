@@ -19,8 +19,8 @@ export default function Footer() {
                     <h4 className="text-white font-bold mb-4 uppercase tracking-wider text-sm">Liên kết</h4>
                     <ul className="space-y-2 text-sm">
                         <li><Link to="/" className="hover:text-emerald-400 transition-colors">Trang chủ</Link></li>
-                        <li><a href="#" className="hover:text-emerald-400 transition-colors">Bảng giá</a></li>
-                        <li><a href="#" className="hover:text-emerald-400 transition-colors">Hướng dẫn đặt sân</a></li>
+                        <li><Link to="/pricing" className="hover:text-emerald-400 transition-colors">Bảng giá</Link></li>
+                        <li><Link to="/guide" className="hover:text-emerald-400 transition-colors">Hướng dẫn đặt sân</Link></li>
                         <li><a href="#" className="hover:text-emerald-400 transition-colors">Điều khoản dịch vụ</a></li>
                     </ul>
                 </div>
