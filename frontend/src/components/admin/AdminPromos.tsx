@@ -1,16 +1,37 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import toast from 'react-hot-toast';
+import LoadingSpinner from '../LoadingSpinner';
 
 export default function AdminPromos() {
     const [promos, setPromos] = useState<any[]>([]);
     const [form, setForm] = useState({ code: '', discount: '', isPercent: false });
+    const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => { fetchPromos(); }, []);
+    useEffect(() => {
+        const loadPromos = async () => {
+            setIsLoading(true);
+            try {
+                await fetchPromos();
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadPromos();
+    }, []);
 
     const fetchPromos = async () => {
         const res = await fetch('/api/promos');
         if (res.ok) setPromos(await res.json());
     };
+
+    if (isLoading) {
+        return (
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 min-h-75 flex items-center justify-center">
+                <LoadingSpinner />
+            </div>
+        );
+    }
 
     const handleCreate = async (e: FormEvent) => {
         e.preventDefault();

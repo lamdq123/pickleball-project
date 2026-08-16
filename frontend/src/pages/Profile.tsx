@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 interface Court { id: number; name: string; location: string; pricePerHour: number; imageUrl?: string; }
 interface Booking { id: number; court: Court; bookDate: string; timeSlot: string; createdAt: string; }
@@ -7,26 +8,33 @@ interface Booking { id: number; court: Court; bookDate: string; timeSlot: string
 function Profile() {
     const navigate = useNavigate();
     const [history, setHistory] = useState<Booking[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [token] = useState(localStorage.getItem('customer_token') || '');
     const [currentUser] = useState<any>(JSON.parse(localStorage.getItem('customer_info') || 'null'));
 
     useEffect(() => {
         if (!currentUser) {
             navigate('/'); // Nếu chưa đăng nhập, đá về trang chủ
-        } else {
-            fetchHistory();
+            return;
         }
+
+        fetchHistory();
     }, [currentUser, navigate]);
 
     const fetchHistory = async () => {
-        const res = await fetch('/api/customer?action=history', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (res.ok) setHistory(await res.json());
-        else {
-            localStorage.removeItem('customer_token');
-            localStorage.removeItem('customer_info');
-            navigate('/');
+        setIsLoading(true);
+        try {
+            const res = await fetch('/api/customer?action=history', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) setHistory(await res.json());
+            else {
+                localStorage.removeItem('customer_token');
+                localStorage.removeItem('customer_info');
+                navigate('/');
+            }
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -37,6 +45,14 @@ function Profile() {
     };
 
     if (!currentUser) return null;
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+                <LoadingSpinner />
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-800 pb-20">

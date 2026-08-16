@@ -1,15 +1,36 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import LoadingSpinner from '../LoadingSpinner';
 
 export default function AdminReviews() {
     const [reviews, setReviews] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => { fetchReviews(); }, []);
+    useEffect(() => {
+        const loadReviews = async () => {
+            setIsLoading(true);
+            try {
+                await fetchReviews();
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadReviews();
+    }, []);
 
     const fetchReviews = async () => {
         const res = await fetch('/api/reviews');
         if (res.ok) setReviews(await res.json());
     };
+
+    if (isLoading) {
+        return (
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 min-h-75 flex items-center justify-center">
+                <LoadingSpinner />
+            </div>
+        );
+    }
 
     const handleDelete = async (id: number) => {
         if (!window.confirm("Xóa đánh giá này?")) return;

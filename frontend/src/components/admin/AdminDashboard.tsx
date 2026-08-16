@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { useNavigate } from 'react-router-dom';
+import LoadingSpinner from '../LoadingSpinner';
 
 // 👉 1. Bỏ { setActiveTab } đi, để trống ngoặc đơn ()
 export default function AdminDashboard() {
     const [bookings, setBookings] = useState<any[]>([]);
     const [users, setUsers] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     // 👉 2. Khai báo biến navigate ở đây
     const navigate = useNavigate();
@@ -16,9 +18,31 @@ export default function AdminDashboard() {
             'Content-Type': 'application/json'
         });
 
-        fetch('/api/bookings', { headers: getHeaders() }).then(res => res.ok && res.json()).then(data => data && setBookings(data));
-        fetch('/api/users', { headers: getHeaders() }).then(res => res.ok && res.json()).then(data => data && setUsers(data));
+        const fetchDashboardData = async () => {
+            setIsLoading(true);
+            try {
+                const [bookingsRes, usersRes] = await Promise.all([
+                    fetch('/api/bookings', { headers: getHeaders() }),
+                    fetch('/api/users', { headers: getHeaders() })
+                ]);
+
+                if (bookingsRes.ok) setBookings(await bookingsRes.json());
+                if (usersRes.ok) setUsers(await usersRes.json());
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchDashboardData();
     }, []);
+
+    if (isLoading) {
+        return (
+            <div className="min-h-75 flex items-center justify-center bg-white rounded-2xl border border-slate-100 shadow-sm">
+                <LoadingSpinner />
+            </div>
+        );
+    }
 
     const totalRevenue = bookings.reduce((sum, b) => sum + (b.court?.pricePerHour || 0), 0);
     const totalBookings = bookings.length;

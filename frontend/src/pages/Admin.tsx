@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 // 👉 Import 6 Component con em vừa tách
 import AdminDashboard from '../components/admin/AdminDashboard';
@@ -13,11 +14,11 @@ import AdminReviews from '../components/admin/AdminReviews';
 function Admin() {
     const navigate = useNavigate();
     const { tab } = useParams(); // 👉 Rút tên tab từ trên thanh URL xuống
+    const [isCheckingAccess, setIsCheckingAccess] = useState(true);
 
     // Kiểm tra xem URL có gõ bậy bạ không. Nếu không nhập gì hoặc gõ sai, mặc định là 'dashboard'
     const validTabs = ['dashboard', 'bookings', 'courts', 'users', 'promos', 'reviews'];
     const activeTab = validTabs.includes(tab || '') ? tab : 'dashboard';
-
 
     useEffect(() => {
         const userInfo = JSON.parse(localStorage.getItem('customer_info') || 'null');
@@ -26,7 +27,10 @@ function Admin() {
         if (!token || !userInfo || userInfo.role !== 'admin') {
             toast.error("Bạn chưa đăng nhập hoặc không có quyền truy cập!");
             navigate('/');
+            return;
         }
+
+        setIsCheckingAccess(false);
     }, [navigate]);
 
     const handleLogout = () => {
@@ -35,6 +39,14 @@ function Admin() {
         toast.success('Đã đăng xuất thành công!');
         navigate('/');
     };
+
+    if (isCheckingAccess) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+                <LoadingSpinner />
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-800">

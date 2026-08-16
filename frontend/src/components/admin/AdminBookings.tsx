@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import toast from 'react-hot-toast';
+import LoadingSpinner from '../LoadingSpinner';
 
 interface Court { id: number; name: string; pricePerHour: number; }
 interface Booking { id: number; court: Court; user: any; bookDate: string; timeSlot: string; }
@@ -8,6 +9,7 @@ export default function AdminBookings() {
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [courts, setCourts] = useState<Court[]>([]);
     const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     const getHeaders = () => ({
         'Authorization': `Bearer ${localStorage.getItem('customer_token')}`,
@@ -24,7 +26,26 @@ export default function AdminBookings() {
         if (res.ok) setCourts(await res.json());
     };
 
-    useEffect(() => { fetchBookings(); fetchCourts(); }, []);
+    useEffect(() => {
+        const loadData = async () => {
+            setIsLoading(true);
+            try {
+                await Promise.all([fetchBookings(), fetchCourts()]);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadData();
+    }, []);
+
+    if (isLoading) {
+        return (
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 min-h-75 flex items-center justify-center">
+                <LoadingSpinner />
+            </div>
+        );
+    }
 
     const handleCancelBooking = async (id: number) => {
         if (!window.confirm("Hủy lịch đặt này?")) return;

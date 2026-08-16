@@ -1,11 +1,13 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import toast from 'react-hot-toast';
+import LoadingSpinner from '../LoadingSpinner';
 
 interface User { id: number; name: string; email: string; phone: string; }
 
 export default function AdminUsers() {
     const [users, setUsers] = useState<User[]>([]);
     const [userFormData, setUserFormData] = useState({ name: '', email: '', phone: '', password: '' });
+    const [isLoading, setIsLoading] = useState(true);
 
     const getHeaders = () => ({
         'Authorization': `Bearer ${localStorage.getItem('customer_token')}`,
@@ -17,7 +19,26 @@ export default function AdminUsers() {
         if (res.ok) setUsers(await res.json());
     };
 
-    useEffect(() => { fetchUsers(); }, []);
+    useEffect(() => {
+        const loadUsers = async () => {
+            setIsLoading(true);
+            try {
+                await fetchUsers();
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadUsers();
+    }, []);
+
+    if (isLoading) {
+        return (
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 min-h-75 flex items-center justify-center">
+                <LoadingSpinner />
+            </div>
+        );
+    }
 
     const handleRegisterUser = async (e: FormEvent) => {
         e.preventDefault();
