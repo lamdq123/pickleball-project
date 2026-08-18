@@ -51,18 +51,39 @@ export default function CourtCard({ court, setViewCourt, setSelectedCourt }: Cou
             </div>
 
             <div>
-                <p className="text-blue-600 font-extrabold text-lg mb-4">
-                    {goldenPrice ? (
-                        <>
-                            <span className="text-slate-400 line-through text-base mr-2">
-                                {court.pricePerHour.toLocaleString('vi-VN')} đ
-                            </span>
-                            <span>{goldenPrice.toLocaleString('vi-VN')} đ</span>
-                            <span className="text-xs text-amber-600 ml-2 font-bold">-{court.goldenDiscount}%</span>
-                        </>
+                {/* 👉 Thêm 'flex items-center flex-wrap' để tự động căn giữa các thành phần theo chiều dọc */}
+                <p className="text-blue-600 font-extrabold text-lg mb-4 flex items-center flex-wrap">
+                    {/* Kiểm tra giá trị có khác null không, để lấy được cả số 0 */}
+                    {goldenPrice !== null ? (
+                        goldenPrice === 0 ? (
+                            /* TRƯỜNG HỢP GIẢM 100% -> HIỆN "MIỄN PHÍ" */
+                            <>
+                                <span className="text-slate-400 line-through text-base mr-2">
+                                    {court.pricePerHour.toLocaleString('vi-VN')} đ
+                                </span>
+                                <span className="text-emerald-500 uppercase tracking-wide">MIỄN PHÍ</span>
+                                {/* 👉 Thêm ml-3 để đẩy huy hiệu ra xa một chút */}
+                                <span className="ml-3 text-[10px] font-extrabold text-amber-700 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full shadow-sm">
+                                    -{court.goldenDiscount}%
+                                </span>
+                            </>
+                        ) : (
+                            /* TRƯỜNG HỢP GIỜ VÀNG BÌNH THƯỜNG */
+                            <>
+                                <span className="text-slate-400 line-through text-base mr-2">
+                                    {court.pricePerHour.toLocaleString('vi-VN')} đ
+                                </span>
+                                <span>{goldenPrice.toLocaleString('vi-VN')} đ</span>
+                                {/* 👉 Thêm ml-3 để đẩy huy hiệu ra xa một chút */}
+                                <span className="ml-3 text-[10px] font-extrabold text-amber-700 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full shadow-sm">
+                                    -{court.goldenDiscount}%
+                                </span>
+                            </>
+                        )
                     ) : (
+                        /* TRƯỜNG HỢP KHÔNG CÓ GIỜ VÀNG */
                         <>
-                            {court.pricePerHour.toLocaleString('vi-VN')} đ <span className="text-sm text-slate-500 font-normal">/giờ</span>
+                            {court.pricePerHour.toLocaleString('vi-VN')} đ <span className="text-sm text-slate-500 font-normal ml-1">/giờ</span>
                         </>
                     )}
                 </p>

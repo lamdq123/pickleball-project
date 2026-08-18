@@ -45,6 +45,12 @@ export default function BookingModal({ selectedCourt, bookDate, setBookDate, tim
     // Hàm gọi API check mã giảm giá
     const handleApplyPromo = async () => {
         if (!promoCode) return;
+        // 👉 CHẶN NGAY NẾU GIÁ SÂN ĐÃ VỀ 0Đ
+        if (finalPrice <= 0) {
+            toast.error('Giá sân đã được giảm 100%, không thể áp dụng thêm mã!');
+            setPromoCode(''); // Xóa luôn chữ khách vừa nhập cho gọn
+            return; // Dừng lại, không gọi API nữa
+        }
         try {
             const res = await fetch(`/api/promos?code=${promoCode}`);
             if (res.ok) {
