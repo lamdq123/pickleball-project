@@ -90,6 +90,7 @@ export default function Navbar({ currentUser, onLogout }: NavbarProps) {
                                                 <span className="text-lg">⚙️</span> Trang Quản Trị
                                             </Link>
                                         )}
+                                        <Link to="/promos" className="font-medium text-slate-300 hover:text-white transition-colors">🎁 Ưu Đãi</Link>
                                     </div>
 
                                     {/* Nút Đăng xuất đỏ chót */}

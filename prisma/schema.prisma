@@ -49,13 +49,15 @@ model Booking {
   court     Court    @relation(fields: [courtId], references: [id])
 }
 // BẢNG MÃ GIẢM GIÁ
-model PromoCode {
-  id          Int      @id @default(autoincrement())
-  code        String   @unique                 // Mã text (VD: GIAM20K)
-  discount    Int                              // Số tiền giảm hoặc phần trăm
-  isPercent   Boolean  @default(false)         // Nếu true thì giảm theo %, false thì giảm thẳng tiền mặt
-  isActive    Boolean  @default(true)          // Trạng thái (Còn hạn hay không)
-  createdAt   DateTime @default(now())
+model Promo {
+  id          Int     @id @default(autoincrement())
+  code        String  @unique
+  discount    Int
+  
+  // 👉 3 Trường mới thêm vào:
+  description String? // Lời quảng cáo (VD: Siêu sale 8/8)
+  validFrom   String? // Ngày bắt đầu (YYYY-MM-DD)
+  validTo     String? // Ngày kết thúc (YYYY-MM-DD)
 }
 
 // BẢNG ĐÁNH GIÁ (RATING)

@@ -53,13 +53,14 @@ export default function BookingModal({ selectedCourt, bookDate, setBookDate, tim
         }
         try {
             const res = await fetch(`/api/promos?code=${promoCode}`);
+            const data = await res.json(); // Đọc dữ liệu trả về trước
+
             if (res.ok) {
-                // Giả định API của em trả về object có chứa số % giảm
-                const data = await res.json();
-                setDiscountPercent(data.discount || 10); // Default giảm 10% nếu API chưa chuẩn
+                setDiscountPercent(data.discount);
                 toast.success('Áp dụng mã giảm giá thành công!');
             } else {
-                toast.error('Mã giảm giá không hợp lệ hoặc đã hết hạn!');
+                // 👉 Sẽ in ra lỗi: "Mã chưa đến ngày" hoặc "Mã đã hết hạn"
+                toast.error(data.error || 'Mã ưu đãi không hợp lệ!');
                 setDiscountPercent(0);
             }
         } catch (error) {

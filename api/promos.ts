@@ -1,45 +1,55 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { PrismaClient } from '@prisma/client';
-import { verifyAdmin } from './auth-middleware';
 const prisma = new PrismaClient();
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-    // GET: Nếu có code thì tìm 1 mã (cho Khách), không có thì lấy tất cả (cho Admin)
+export default async function handler(req: any, res: any) {
     if (req.method === 'GET') {
-        try {
-            const code = req.query.code as string;
-            if (code) {
-                const promo = await prisma.promoCode.findUnique({ where: { code: code.toUpperCase() } });
-                if (!promo || !promo.isActive) return res.status(400).json({ error: 'Mã không hợp lệ hoặc đã hết hạn' });
-                return res.status(200).json(promo);
-            } else {
-                const promos = await prisma.promoCode.findMany({ orderBy: { createdAt: 'desc' } });
-                return res.status(200).json(promos);
+        const { code } = req.query;
+        // 1. Nếu khách hàng nhập mã để kiểm tra
+        if (code) {
+            const promo = await prisma.promo.findUnique({ where: { code: String(code).toUpperCase() } });
+            if (!promo) return res.status(404).json({ error: 'Mã ưu đãi không tồn tại!' });
+
+            // 💡 KIỂM TRA NGÀY SỬ DỤNG
+            const today = new Date().toISOString().split('T')[0]; // Lấy ngày hôm nay dạng YYYY-MM-DD
+
+            if (promo.validFrom && today < promo.validFrom) {
+                return res.status(400).json({ error: `Mã này chỉ bắt đầu dùng được từ ngày ${promo.validFrom}` });
             }
-        } catch (error) { return res.status(500).json({ error: 'Lỗi server' }); }
+            if (promo.validTo && today > promo.validTo) {
+                return res.status(400).json({ error: 'Mã ưu đãi này đã hết hạn sử dụng!' });
+            }
+
+            return res.status(200).json(promo);
+        }
+
+        // 2. Lấy danh sách toàn bộ mã
+        const promos = await prisma.promo.findMany({ orderBy: { id: 'desc' } });
+        return res.status(200).json(promos);
     }
 
-    // POST: Admin tạo mã mới
     if (req.method === 'POST') {
-        if (!verifyAdmin(req, res)) return;
+        const data = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
         try {
-            const { code, discount, isPercent } = req.body;
-            const newPromo = await prisma.promoCode.create({
-                data: { code: code.toUpperCase(), discount: Number(discount), isPercent: Boolean(isPercent) }
+            const newPromo = await prisma.promo.create({
+                data: {
+                    code: data.code.toUpperCase(),
+                    discount: Number(data.discount),
+                    description: data.description || null,
+                    validFrom: data.validFrom || null,
+                    validTo: data.validTo || null
+                }
             });
             return res.status(200).json(newPromo);
-        } catch (error) { return res.status(400).json({ error: 'Mã này đã tồn tại!' }); }
+        } catch (e) {
+            return res.status(400).json({ error: 'Mã code này đã tồn tại, vui lòng chọn tên khác!' });
+        }
     }
 
-    // DELETE: Admin xóa mã
     if (req.method === 'DELETE') {
-        if (!verifyAdmin(req, res)) return;
-        try {
-            const id = Number(req.query.id);
-            await prisma.promoCode.delete({ where: { id } });
-            return res.status(200).json({ message: 'Xóa thành công' });
-        } catch (error) { return res.status(400).json({ error: 'Lỗi khi xóa' }); }
+        const { id } = req.query;
+        await prisma.promo.delete({ where: { id: Number(id) } });
+        return res.status(200).json({ success: true });
     }
 
-    return res.status(405).json({ error: 'Method not allowed' });
+    res.status(405).json({ error: 'Method not allowed' });
 }

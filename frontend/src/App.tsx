@@ -6,6 +6,7 @@ import Profile from './pages/Profile';
 import Pricing from './pages/Pricing';
 import Guide from './pages/Guide';
 import MyCourts from './pages/MyCourts';
+import Promos from './pages/Promos';
 // ==========================================
 // COMPONENT TRẠM GÁC (Bảo vệ trang Admin)
 // ==========================================
@@ -39,7 +40,13 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/my-courts" element={<MyCourts />} />
+          <Route path="/promos" element={<Promos />} />
 
+
+
+
+
+          
           <Route path="/admin" element={
             <ProtectedRoute>
               <Admin />
