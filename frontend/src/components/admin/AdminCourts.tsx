@@ -13,6 +13,7 @@ export default function AdminCourts() {
         name: '', location: '', pricePerHour: '', imageUrl: '',
         goldenHourStart: '', goldenHourEnd: '', goldenDiscount: ''
     });
+    const HOURS = ['05:00', '06:00', '07:00', '17:00', '18:00', '19:00', '20:00'];
     const [editingCourtId, setEditingCourtId] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const getHeaders = () => ({
@@ -86,16 +87,24 @@ export default function AdminCourts() {
                         <input type="url" placeholder="https://..." value={courtFormData.imageUrl} onChange={e => setCourtFormData({ ...courtFormData, imageUrl: e.target.value })} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                     </div>
                     <div className="w-full">
-                        <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Giờ Vàng - Bắt đầu</label>
-                        <input type="time" value={courtFormData.goldenHourStart} onChange={e => setCourtFormData({ ...courtFormData, goldenHourStart: e.target.value })} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                        <label className="text-xs font-bold text-amber-700 uppercase mb-2 block">Bắt đầu giờ vàng</label>
+                        {/* 👉 Đổi thành thẻ select để chọn từ danh sách HOURS */}
+                        <select value={courtFormData.goldenHourStart} onChange={e => setCourtFormData({ ...courtFormData, goldenHourStart: e.target.value })} className="w-full px-4 py-3 border border-amber-200 bg-white rounded-lg focus:ring-2 focus:ring-amber-500 outline-none">
+                            <option value="">-- Chọn giờ --</option>
+                            {HOURS.map(h => <option key={`start-${h}`} value={h}>{h}</option>)}
+                        </select>
                     </div>
                     <div className="w-full">
-                        <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Giờ Vàng - Kết thúc</label>
-                        <input type="time" value={courtFormData.goldenHourEnd} onChange={e => setCourtFormData({ ...courtFormData, goldenHourEnd: e.target.value })} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                        <label className="text-xs font-bold text-amber-700 uppercase mb-2 block">Kết thúc giờ vàng</label>
+                        {/* 👉 Đổi thành thẻ select để chọn từ danh sách HOURS */}
+                        <select value={courtFormData.goldenHourEnd} onChange={e => setCourtFormData({ ...courtFormData, goldenHourEnd: e.target.value })} className="w-full px-4 py-3 border border-amber-200 bg-white rounded-lg focus:ring-2 focus:ring-amber-500 outline-none">
+                            <option value="">-- Chọn giờ --</option>
+                            {HOURS.map(h => <option key={`end-${h}`} value={h}>{h}</option>)}
+                        </select>
                     </div>
                     <div className="w-full">
-                        <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Giảm giá (%)</label>
-                        <input type="number" min="0" max="100" value={courtFormData.goldenDiscount} onChange={e => setCourtFormData({ ...courtFormData, goldenDiscount: e.target.value })} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                        <label className="text-xs font-bold text-amber-700 uppercase mb-2 block">Giảm giá (%)</label>
+                        <input type="number" min="0" max="100" placeholder="Ví dụ: 10" value={courtFormData.goldenDiscount} onChange={e => setCourtFormData({ ...courtFormData, goldenDiscount: e.target.value })} className="w-full px-4 py-3 border border-amber-200 bg-white rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" />
                     </div>
                     <div className="lg:col-span-4 mt-2 flex gap-3">
                         <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors shadow-md">

@@ -1,1 +1,26 @@
 @import "tailwindcss";
+
+/* Tùy chỉnh thanh cuộn (Scrollbar) cho toàn hệ thống */
+::-webkit-scrollbar {
+    width: 6px;
+    /* Thu hẹp độ rộng thanh cuộn */
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+    /* Nền trong suốt để không bị vệt dài */
+    margin: 8px 0;
+    /* Cách góc trên/dưới một chút cho đẹp */
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    /* Màu xám nhạt (slate-300) */
+    border-radius: 10px;
+    /* Bo tròn tuyệt đối */
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+    /* Khi di chuột vào thì đậm lên một chút (slate-400) */
+}

@@ -75,7 +75,7 @@ export default function BookingModal({ selectedCourt, bookDate, setBookDate, tim
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-6">
                     <h4 className="font-bold text-lg text-slate-800">{selectedCourt.name}</h4>
                     <p className="text-slate-500 text-sm mt-1 flex items-center gap-1">📍 {selectedCourt.location}</p>
-                    <p className="text-slate-500 text-sm mt-1 line-through">Giá gốc: {selectedCourt.pricePerHour.toLocaleString('vi-VN')} đ/giờ</p>
+                    <p className="text-slate-500 text-sm mt-1">Giá gốc: {selectedCourt.pricePerHour.toLocaleString('vi-VN')} đ/giờ</p>
                 </div>
 
                 <form onSubmit={(e) => onSubmit(e, finalPrice)} className="space-y-4">
@@ -92,10 +92,42 @@ export default function BookingModal({ selectedCourt, bookDate, setBookDate, tim
                             <div className="grid grid-cols-2 gap-3">
                                 {TIME_SLOTS.map(slot => {
                                     const isBooked = bookedSlots.includes(slot);
+
+                                    // 💡 KIỂM TRA XEM Ô NÀY CÓ PHẢI LÀ GIỜ VÀNG KHÔNG
+                                    let isSlotGolden = false;
+                                    if (selectedCourt?.goldenHourStart && selectedCourt?.goldenHourEnd && selectedCourt?.goldenDiscount) {
+                                        const slotStartHour = parseInt(slot.split(':')[0]);
+                                        const goldenStartHour = parseInt(selectedCourt.goldenHourStart.split(':')[0]);
+                                        const goldenEndHour = parseInt(selectedCourt.goldenHourEnd.split(':')[0]);
+                                        if (slotStartHour >= goldenStartHour && slotStartHour < goldenEndHour) {
+                                            isSlotGolden = true;
+                                        }
+                                    }
+
+                                    // 💡 GÁN CLASS MÀU SẮC DỰA TRÊN TRẠNG THÁI
+                                    let labelClasses = "border rounded-xl p-3 flex flex-col items-center justify-center cursor-pointer transition-all relative overflow-hidden ";
+
+                                    if (isBooked) {
+                                        labelClasses += "bg-slate-100 border-slate-200 opacity-50 cursor-not-allowed"; // Đã được đặt
+                                    } else if (timeSlot === slot) {
+                                        labelClasses += "border-blue-600 bg-blue-50 text-blue-700 shadow-md shadow-blue-500/20"; // Đang được chọn
+                                    } else if (isSlotGolden) {
+                                        labelClasses += "border-amber-300 bg-amber-50 hover:border-amber-400 hover:bg-amber-100 text-amber-900"; // Là giờ vàng
+                                    } else {
+                                        labelClasses += "border-slate-200 hover:border-blue-400 text-slate-700"; // Giờ bình thường
+                                    }
+
                                     return (
-                                        <label key={slot} className={`border rounded-lg p-3 flex items-center justify-center cursor-pointer transition-colors ${isBooked ? 'bg-slate-100 border-slate-200 opacity-50 cursor-not-allowed' : timeSlot === slot ? 'border-blue-600 bg-blue-50 text-blue-700 font-bold shadow-sm' : 'border-slate-200 hover:border-blue-400'}`}>
+                                        <label key={slot} className={labelClasses}>
                                             <input type="radio" name="timeSlot" value={slot} checked={timeSlot === slot} onChange={e => setTimeSlot(e.target.value)} disabled={isBooked} className="hidden" />
-                                            <span className="text-sm">{slot}</span>
+                                            <span className="text-sm font-bold z-10">{slot}</span>
+
+                                            {/* Hiện huy hiệu giảm giá nếu là Giờ Vàng và chưa bị người khác đặt */}
+                                            {isSlotGolden && !isBooked && (
+                                                <span className="text-[10px] font-extrabold text-amber-600 mt-1 z-10 bg-amber-200/50 px-2 py-0.5 rounded-full">
+                                                    ✨ -{selectedCourt.goldenDiscount}%
+                                                </span>
+                                            )}
                                         </label>
                                     );
                                 })}
