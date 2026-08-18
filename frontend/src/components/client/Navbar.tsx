@@ -74,13 +74,12 @@ export default function Navbar({ currentUser, onLogout }: NavbarProps) {
                                             <span className="text-lg">👤</span> Hồ sơ cá nhân
                                         </Link>
                                         <Link
-                                            to="/profile"
+                                            to="/my-courts"
                                             onClick={() => setIsDropdownOpen(false)}
                                             className="w-full px-5 py-2.5 text-sm hover:bg-blue-50 hover:text-blue-600 transition-colors font-medium flex items-center gap-3"
                                         >
                                             <span className="text-lg">🏟️</span> Sân của tôi
                                         </Link>
-
                                         {/* 💡 CHỈ HIỂN THỊ TRANG QUẢN TRỊ NẾU LÀ ADMIN */}
                                         {currentUser.role === 'admin' && (
                                             <Link

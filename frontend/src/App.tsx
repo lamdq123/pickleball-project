@@ -5,6 +5,7 @@ import Admin from './pages/Admin';
 import Profile from './pages/Profile';
 import Pricing from './pages/Pricing';
 import Guide from './pages/Guide';
+import MyCourts from './pages/MyCourts';
 // ==========================================
 // COMPONENT TRẠM GÁC (Bảo vệ trang Admin)
 // ==========================================
@@ -36,7 +37,8 @@ function App() {
       <div style={{ fontFamily: 'Arial, sans-serif' }}>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/profile" element={<Profile />} /> {/* 👉 THÊM DÒNG NÀY */}
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/my-courts" element={<MyCourts />} />
 
           <Route path="/admin" element={
             <ProtectedRoute>
