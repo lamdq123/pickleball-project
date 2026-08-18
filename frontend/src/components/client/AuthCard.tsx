@@ -27,14 +27,14 @@ export default function AuthCard({ authMode, authForm, setAuthMode, setAuthForm,
                     <input type="email" placeholder="Email của bạn" required value={authForm.email} onChange={e => setAuthForm({...authForm, email: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
                     <input type="password" placeholder="Mật khẩu" required value={authForm.password} onChange={e => setAuthForm({...authForm, password: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
                     
-                    <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors shadow-md shadow-blue-500/30 mt-2">
+                    <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors shadow-md shadow-blue-500/30 mt-2 cursor-pointer">
                         {authMode === 'login' ? 'ĐĂNG NHẬP' : 'TẠO TÀI KHOẢN'}
                     </button>
                 </form>
                 
                 <p className="text-center mt-6 text-sm text-slate-600">
                     {authMode === 'login' ? 'Chưa có tài khoản? ' : 'Đã có tài khoản? '}
-                    <button onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')} className="text-blue-600 font-bold hover:underline">
+                    <button onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')} className="text-blue-600 font-bold hover:underline cursor-pointer">
                         {authMode === 'login' ? 'Đăng ký ngay' : 'Đăng nhập'}
                     </button>
                 </p>

@@ -89,7 +89,7 @@ export default function MyCourts() {
                         <span className="text-5xl block mb-4">📭</span>
                         <h3 className="text-xl font-bold text-slate-700">Chưa có lịch đặt nào</h3>
                         <p className="text-slate-500 mb-6 mt-2">Bạn chưa đặt sân nào trên hệ thống. Hãy bắt đầu ngay!</p>
-                        <button onClick={() => navigate('/')} className="px-8 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-md shadow-blue-500/30">
+                        <button onClick={() => navigate('/')} className="px-8 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-md shadow-blue-500/30 cursor-pointer">
                             ĐẶT SÂN NGAY
                         </button>
                     </div>
@@ -109,7 +109,7 @@ export default function MyCourts() {
                                 {/* 👉 Nút bấm hủy sân */}
                                 <button 
                                     onClick={() => handleCancelBooking(booking.id)}
-                                    className="px-6 py-2.5 bg-red-50 text-red-600 font-bold rounded-xl hover:bg-red-500 hover:text-white transition-colors border border-red-100 w-full md:w-auto shadow-sm"
+                                    className="px-6 py-2.5 bg-red-50 text-red-600 font-bold rounded-xl hover:bg-red-500 hover:text-white transition-colors border border-red-100 w-full md:w-auto shadow-sm cursor-pointer"
                                 >
                                     HỦY SÂN
                                 </button>

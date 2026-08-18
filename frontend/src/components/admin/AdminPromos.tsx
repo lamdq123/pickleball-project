@@ -68,7 +68,7 @@ export default function AdminPromos() {
                         <input type="checkbox" id="isPercent" checked={form.isPercent} onChange={e => setForm({ ...form, isPercent: e.target.checked })} className="w-5 h-5 cursor-pointer" />
                         <label htmlFor="isPercent" className="text-sm font-bold text-slate-600 cursor-pointer">Giảm theo %</label>
                     </div>
-                    <button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-lg">TẠO MÃ</button>
+                    <button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-lg cursor-pointer">TẠO MÃ</button>
                 </form>
             </div>
 
@@ -86,7 +86,7 @@ export default function AdminPromos() {
                             <tr key={p.id} className="hover:bg-slate-50">
                                 <td className="px-6 py-4 font-bold text-emerald-600 text-lg">{p.code}</td>
                                 <td className="px-6 py-4 font-bold text-slate-700">{p.isPercent ? `${p.discount}%` : `${p.discount.toLocaleString('vi-VN')} đ`}</td>
-                                <td className="px-6 py-4 text-center"><button onClick={() => handleDelete(p.id)} className="text-red-500 hover:bg-red-50 px-4 py-2 rounded-lg font-bold">Xóa</button></td>
+                                <td className="px-6 py-4 text-center"><button onClick={() => handleDelete(p.id)} className="text-red-500 hover:bg-red-50 px-4 py-2 rounded-lg font-bold cursor-pointer">Xóa</button></td>
                             </tr>
                         ))}
                     </tbody>

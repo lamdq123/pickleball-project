@@ -99,7 +99,7 @@ export default function Navbar({ currentUser, onLogout }: NavbarProps) {
                                                 setIsDropdownOpen(false);
                                                 onLogout();
                                             }}
-                                            className="w-full text-left px-5 py-3.5 text-sm text-red-600 hover:bg-red-50 transition-colors font-bold flex items-center gap-3"
+                                            className="w-full text-left px-5 py-3.5 text-sm text-red-600 hover:bg-red-50 transition-colors font-bold flex items-center gap-3 cursor-pointer"
                                         >
                                             <span className="text-lg">🚪</span> Đăng xuất
                                         </button>

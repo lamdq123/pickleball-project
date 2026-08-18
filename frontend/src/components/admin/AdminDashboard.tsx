@@ -95,8 +95,8 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* 👉 3. Sửa 2 nút này thành navigate */}
-                <button onClick={() => navigate('/admin/promos')} className="px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap bg-blue-100 text-blue-700 hover:bg-blue-200">🎟 Mã giảm giá</button>
-                <button onClick={() => navigate('/admin/reviews')} className="px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap bg-blue-100 text-blue-700 hover:bg-blue-200">⭐ Đánh giá</button>
+                <button onClick={() => navigate('/admin/promos')} className="px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap bg-blue-100 text-blue-700 hover:bg-blue-200 cursor-pointer">🎟 Mã giảm giá</button>
+                <button onClick={() => navigate('/admin/reviews')} className="px-4 py-2 font-bold rounded-lg transition-colors whitespace-nowrap bg-blue-100 text-blue-700 hover:bg-blue-200 cursor-pointer">⭐ Đánh giá</button>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">

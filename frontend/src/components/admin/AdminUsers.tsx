@@ -80,7 +80,7 @@ export default function AdminUsers() {
                         <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Mật khẩu</label>
                         <input type="password" required value={userFormData.password} onChange={e => setUserFormData({ ...userFormData, password: e.target.value })} className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-lg outline-none focus:border-blue-500" />
                     </div>
-                    <button type="submit" className="w-full md:w-auto bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-8 rounded-lg transition-colors shadow-md">TẠO TÀI KHOẢN</button>
+                    <button type="submit" className="w-full md:w-auto bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-8 rounded-lg transition-colors shadow-md cursor-pointer">TẠO TÀI KHOẢN</button>
                 </form>
             </div>
 
@@ -104,7 +104,7 @@ export default function AdminUsers() {
                                     <td className="px-6 py-4 text-slate-600">{user.email}</td>
                                     <td className="px-6 py-4 text-slate-600">{user.phone || 'Chưa cập nhật'}</td>
                                     <td className="px-6 py-4 text-center">
-                                        <button onClick={() => handleDeleteUser(user.id)} className="bg-red-50 text-red-600 hover:bg-red-500 hover:text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors">Xóa</button>
+                                        <button onClick={() => handleDeleteUser(user.id)} className="bg-red-50 text-red-600 hover:bg-red-500 hover:text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors cursor-pointer">Xóa</button>
                                     </td>
                                 </tr>
                             ))}

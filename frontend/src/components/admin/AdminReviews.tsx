@@ -59,7 +59,7 @@ export default function AdminReviews() {
                                 <td className="px-6 py-4 text-blue-600 font-semibold">{r.court?.name}</td>
                                 <td className="px-6 py-4 text-amber-500 font-bold">{"★".repeat(r.rating)}</td>
                                 <td className="px-6 py-4 text-slate-600 italic">"{r.comment}"</td>
-                                <td className="px-6 py-4 text-center"><button onClick={() => handleDelete(r.id)} className="text-red-500 hover:bg-red-50 px-4 py-2 rounded-lg font-bold">Gỡ bỏ</button></td>
+                                <td className="px-6 py-4 text-center"><button onClick={() => handleDelete(r.id)} className="text-red-500 hover:bg-red-50 px-4 py-2 rounded-lg font-bold cursor-pointer">Gỡ bỏ</button></td>
                             </tr>
                         ))}
                     </tbody>

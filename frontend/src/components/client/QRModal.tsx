@@ -18,13 +18,13 @@ export default function QRModal({ qrUrl, onConfirm, onCancel }: QRModalProps) {
                 <div className="flex flex-col gap-3">
                     <button
                         onClick={onConfirm}
-                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-colors shadow-md shadow-emerald-600/30"
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-colors shadow-md shadow-emerald-600/30 cursor-pointer"
                     >
                         ✅ TÔI ĐÃ CHUYỂN KHOẢN
                     </button>
                     <button
                         onClick={onCancel}
-                        className="w-full bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 font-bold py-3 rounded-xl transition-colors"
+                        className="w-full bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 font-bold py-3 rounded-xl transition-colors cursor-pointer"
                     >
                         ❌ HỦY GIAO DỊCH
                     </button>

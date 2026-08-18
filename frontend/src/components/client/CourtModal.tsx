@@ -48,7 +48,7 @@ export default function CourtModal({ viewCourt, setViewCourt, setSelectedCourt, 
                 {/* Ảnh cover */}
                 <div className="w-full h-64 sm:h-72 bg-slate-200 relative shrink-0">
                     <img src={viewCourt.imageUrl || DEFAULT_COURT_IMG} alt={viewCourt.name} className="w-full h-full object-cover" />
-                    <button onClick={() => setViewCourt(null)} className="absolute top-4 right-4 bg-black/50 text-white hover:bg-red-500 rounded-full p-2 backdrop-blur-md transition-colors">
+                    <button onClick={() => setViewCourt(null)} className="absolute top-4 right-4 bg-black/50 text-white hover:bg-red-500 rounded-full p-2 backdrop-blur-md transition-colors cursor-pointer">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
@@ -75,7 +75,7 @@ export default function CourtModal({ viewCourt, setViewCourt, setSelectedCourt, 
                             </select>
                             <div className="flex gap-2">
                                 <input type="text" placeholder="Bạn thấy sân này thế nào?" required value={comment} onChange={e => setComment(e.target.value)} className="flex-1 px-4 py-2 border border-slate-200 rounded-lg outline-none focus:border-blue-500 text-sm" />
-                                <button type="submit" className="bg-blue-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm">Gửi</button>
+                                <button type="submit" className="bg-blue-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm cursor-pointer">Gửi</button>
                             </div>
                         </form>
                     </div>
@@ -85,7 +85,7 @@ export default function CourtModal({ viewCourt, setViewCourt, setSelectedCourt, 
                             <p className="text-slate-500 text-sm font-medium mb-1">Giá thuê:</p>
                             <p className="text-2xl font-extrabold text-blue-600">{viewCourt.pricePerHour.toLocaleString('vi-VN')}đ<span className="text-sm font-normal text-slate-500">/giờ</span></p>
                         </div>
-                        <button onClick={() => { setSelectedCourt(viewCourt); setViewCourt(null); }} className="bg-slate-900 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg shadow-slate-900/20">
+                        <button onClick={() => { setSelectedCourt(viewCourt); setViewCourt(null); }} className="bg-slate-900 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg shadow-slate-900/20 cursor-pointer">
                             ĐẶT LỊCH NGAY
                         </button>
                     </div>

@@ -150,11 +150,11 @@ export default function AdminCourts() {
                     </div>
 
                     <div className="lg:col-span-4 mt-2 flex gap-3">
-                        <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors shadow-md">
+                        <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors shadow-md cursor-pointer">
                             {editingCourtId ? 'LƯU THAY ĐỔI' : 'THÊM SÂN MỚI'}
                         </button>
                         {editingCourtId && (
-                            <button type="button" onClick={() => { setEditingCourtId(null); setCourtFormData({ name: '', location: '', pricePerHour: '', imageUrl: '', goldenHourStart: '', goldenHourEnd: '', goldenDiscount: '' }); }} className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 px-8 rounded-lg">
+                            <button type="button" onClick={() => { setEditingCourtId(null); setCourtFormData({ name: '', location: '', pricePerHour: '', imageUrl: '', goldenHourStart: '', goldenHourEnd: '', goldenDiscount: '' }); }} className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 px-8 rounded-lg cursor-pointer">
                                 HỦY
                             </button>
                         )}
@@ -182,8 +182,8 @@ export default function AdminCourts() {
                                 )}
                             </div>
                             <div className="mt-6 flex gap-2">
-                                <button onClick={() => handleEditCourtClick(court)} className="flex-1 py-2.5 bg-blue-50 text-blue-600 font-bold rounded-lg hover:bg-blue-600 hover:text-white transition-colors border border-blue-100">Sửa</button>
-                                <button onClick={() => handleDeleteCourt(court.id)} className="flex-1 py-2.5 bg-red-50 text-red-600 font-bold rounded-lg hover:bg-red-500 hover:text-white transition-colors border border-red-100">Xóa</button>
+                                <button onClick={() => handleEditCourtClick(court)} className="flex-1 py-2.5 bg-blue-50 text-blue-600 font-bold rounded-lg hover:bg-blue-600 hover:text-white transition-colors border border-blue-100 cursor-pointer">Sửa</button>
+                                <button onClick={() => handleDeleteCourt(court.id)} className="flex-1 py-2.5 bg-red-50 text-red-600 font-bold rounded-lg hover:bg-red-500 hover:text-white transition-colors border border-red-100 cursor-pointer">Xóa</button>
                             </div>
                         </div>
                     ))}

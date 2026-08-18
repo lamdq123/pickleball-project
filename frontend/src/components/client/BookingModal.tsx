@@ -164,7 +164,7 @@ export default function BookingModal({ selectedCourt, bookDate, setBookDate, tim
                             {/* Bảng nhập Mã giảm giá */}
                             <div className="flex gap-2">
                                 <input type="text" placeholder="Nhập mã ưu đãi..." value={promoCode} onChange={e => setPromoCode(e.target.value)} className="flex-1 px-4 py-3 border border-slate-200 bg-slate-50 rounded-xl outline-none focus:border-blue-500 text-sm uppercase" />
-                                <button type="button" onClick={handleApplyPromo} className="px-5 py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-sm font-bold transition-colors shadow-md">ÁP DỤNG</button>
+                                <button type="button" onClick={handleApplyPromo} className="px-5 py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-sm font-bold transition-colors shadow-md cursor-pointer">ÁP DỤNG</button>
                             </div>
 
                             {/* Hiển thị chiết khấu từ Mã */}
@@ -185,10 +185,10 @@ export default function BookingModal({ selectedCourt, bookDate, setBookDate, tim
 
                     {/* Nút Hủy và Submit */}
                     <div className="flex gap-3 mt-6">
-                        <button type="button" onClick={onClose} className="w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-4 rounded-xl transition-colors text-lg">
+                        <button type="button" onClick={onClose} className="w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-4 rounded-xl transition-colors text-lg cursor-pointer">
                             HỦY
                         </button>
-                        <button type="submit" disabled={!timeSlot || !bookDate} className="w-2/3 bg-blue-600 disabled:bg-slate-300 disabled:cursor-not-allowed hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition-colors shadow-lg shadow-blue-500/30 text-lg">
+                        <button type="submit" disabled={!timeSlot || !bookDate} className="w-2/3 bg-blue-600 disabled:bg-slate-300 disabled:cursor-not-allowed hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition-colors shadow-lg shadow-blue-500/30 text-lg cursor-pointer">
                             XÁC NHẬN
                         </button>
                     </div>

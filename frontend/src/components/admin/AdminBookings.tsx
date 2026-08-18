@@ -1,14 +1,9 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import LoadingSpinner from '../LoadingSpinner';
 
-interface Court { id: number; name: string; pricePerHour: number; }
-interface Booking { id: number; court: Court; user: any; bookDate: string; timeSlot: string; }
-
 export default function AdminBookings() {
-    const [bookings, setBookings] = useState<Booking[]>([]);
-    const [courts, setCourts] = useState<Court[]>([]);
-    const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
+    const [bookings, setBookings] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const getHeaders = () => ({
@@ -17,119 +12,94 @@ export default function AdminBookings() {
     });
 
     const fetchBookings = async () => {
-        const res = await fetch('/api/bookings', { headers: getHeaders() });
-        if (res.ok) setBookings(await res.json());
-    };
+        setIsLoading(true);
+        try {
+            const res = await fetch('/api/bookings', { headers: getHeaders() });
+            if (res.ok) {
+                const data = await res.json();
 
-    const fetchCourts = async () => {
-        const res = await fetch('/api/courts', { headers: getHeaders() });
-        if (res.ok) setCourts(await res.json());
-    };
-
-    useEffect(() => {
-        const loadData = async () => {
-            setIsLoading(true);
-            try {
-                await Promise.all([fetchBookings(), fetchCourts()]);
-            } finally {
-                setIsLoading(false);
+                // 👉 1. SẮP XẾP MỚI NHẤT LÊN ĐẦU (ID giảm dần)
+                const sortedData = data.sort((a: any, b: any) => b.id - a.id);
+                setBookings(sortedData);
             }
-        };
-
-        loadData();
-    }, []);
-
-    if (isLoading) {
-        return (
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 min-h-75 flex items-center justify-center">
-                <LoadingSpinner />
-            </div>
-        );
-    }
-
-    const handleCancelBooking = async (id: number) => {
-        if (!window.confirm("Hủy lịch đặt này?")) return;
-        const res = await fetch(`/api/bookings?id=${id}`, { method: 'DELETE', headers: getHeaders() });
-        if (res.ok) fetchBookings(); else toast.error("Lỗi khi hủy lịch");
+        } catch (error) {
+            toast.error("Không thể tải danh sách!");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const handleUpdateBooking = async (e: FormEvent) => {
-        e.preventDefault();
-        if (!editingBooking) return;
-        const res = await fetch('/api/bookings', {
-            method: 'PUT', headers: getHeaders(),
-            body: JSON.stringify({ id: editingBooking.id, courtId: editingBooking.court.id, bookDate: editingBooking.bookDate, timeSlot: editingBooking.timeSlot })
+    useEffect(() => { fetchBookings(); }, []);
+
+    const handleDelete = async (id: number) => {
+        if (!window.confirm("Bạn có chắc chắn muốn hủy lịch này?")) return;
+        const res = await fetch(`/api/bookings?id=${id}`, {
+            method: 'DELETE',
+            headers: getHeaders()
         });
         if (res.ok) {
-            toast.success("Cập nhật lịch thành công!");
-            setEditingBooking(null);
+            toast.success("Đã hủy lịch thành công!");
             fetchBookings();
-        } else toast.error((await res.json()).error);
+        } else {
+            toast.error("Lỗi khi hủy lịch!");
+        }
     };
 
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden animate-fade-in">
-            <div className="p-6 border-b border-slate-100">
-                <h3 className="text-lg font-bold text-slate-800">Danh sách Lịch đặt sân</h3>
-            </div>
-            <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                    <thead className="bg-slate-50 text-slate-500 text-sm uppercase tracking-wider">
-                        <tr>
-                            <th className="px-6 py-4 font-semibold">Mã vé</th>
-                            <th className="px-6 py-4 font-semibold">Khách hàng</th>
-                            <th className="px-6 py-4 font-semibold">Sân</th>
-                            <th className="px-6 py-4 font-semibold">Ngày & Giờ</th>
-                            <th className="px-6 py-4 font-semibold text-center">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                        {bookings.map(b => (
-                            <tr key={b.id} className="hover:bg-slate-50 transition-colors">
-                                <td className="px-6 py-4 font-bold text-slate-700">#{b.id}</td>
-                                <td className="px-6 py-4 font-medium text-slate-900">{b.user?.name || 'Khách vãng lai'}</td>
-                                <td className="px-6 py-4 text-blue-600 font-semibold">{b.court?.name || 'Sân đã xóa'}</td>
-                                <td className="px-6 py-4 text-slate-600">
-                                    <span className="bg-slate-200 text-slate-700 px-2 py-1 rounded text-xs mr-2 font-bold">{b.bookDate}</span>
-                                    <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-xs font-bold">{b.timeSlot}</span>
-                                </td>
-                                <td className="px-6 py-4 text-center">
-                                    <button onClick={() => setEditingBooking(b)} className="text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg text-sm font-bold mr-2">Sửa</button>
-                                    <button onClick={() => handleCancelBooking(b.id)} className="text-red-500 hover:bg-red-50 px-3 py-2 rounded-lg text-sm font-bold border border-transparent hover:border-red-200">Hủy</button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+        <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-100 animate-fade-in">
+            <h3 className="text-xl font-bold text-slate-800 mb-6 border-l-4 border-blue-500 pl-3">Danh sách Lịch đặt sân</h3>
 
-            {editingBooking && (
-                <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl animate-fade-in">
-                        <h3 className="text-xl font-bold text-slate-800 mb-4">Sửa Lịch Đặt #{editingBooking.id}</h3>
-                        <form onSubmit={handleUpdateBooking} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-bold text-slate-600 mb-1">Chuyển sang Sân khác</label>
-                                <select required value={editingBooking.court.id} onChange={e => setEditingBooking({ ...editingBooking, court: { ...editingBooking.court, id: Number(e.target.value) } })} className="w-full border border-slate-200 p-3 rounded-lg outline-none focus:border-blue-500">
-                                    {courts.map(c => <option key={c.id} value={c.id}>{c.name} - {c.pricePerHour.toLocaleString('vi-VN')}đ/h</option>)}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-bold text-slate-600 mb-1">Đổi Ngày</label>
-                                <input type="date" required value={editingBooking.bookDate} onChange={e => setEditingBooking({ ...editingBooking, bookDate: e.target.value })} className="w-full border border-slate-200 p-3 rounded-lg outline-none focus:border-blue-500" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-bold text-slate-600 mb-1">Đổi Khung giờ</label>
-                                <select required value={editingBooking.timeSlot} onChange={e => setEditingBooking({ ...editingBooking, timeSlot: e.target.value })} className="w-full border border-slate-200 p-3 rounded-lg outline-none focus:border-blue-500">
-                                    {["05:00 - 06:00", "06:00 - 07:00", "17:00 - 18:00", "18:00 - 19:00", "19:00 - 20:00", "20:00 - 21:00"].map(slot => <option key={slot} value={slot}>{slot}</option>)}
-                                </select>
-                            </div>
-                            <div className="flex justify-end gap-3 pt-4 mt-6 border-t border-slate-100">
-                                <button type="button" onClick={() => setEditingBooking(null)} className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold">Hủy</button>
-                                <button type="submit" className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-md">Lưu thay đổi</button>
-                            </div>
-                        </form>
-                    </div>
+            {isLoading ? (
+                <LoadingSpinner />
+            ) : bookings.length === 0 ? (
+                <div className="text-center py-10">
+                    <span className="text-4xl block mb-2">📭</span>
+                    <p className="text-slate-500 font-medium">Chưa có lịch đặt nào trên hệ thống.</p>
+                </div>
+            ) : (
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse min-w-200">
+                        <thead>
+                            <tr className="border-b border-slate-100 bg-slate-50">
+                                <th className="py-4 px-4 text-slate-500 font-bold text-xs uppercase tracking-wider">Mã vé</th>
+                                <th className="py-4 px-4 text-slate-500 font-bold text-xs uppercase tracking-wider">Khách hàng</th>
+                                <th className="py-4 px-4 text-slate-500 font-bold text-xs uppercase tracking-wider">Sân</th>
+                                {/* 👉 2. THÊM TIÊU ĐỀ CỘT VỊ TRÍ */}
+                                <th className="py-4 px-4 text-slate-500 font-bold text-xs uppercase tracking-wider">Vị trí</th>
+                                <th className="py-4 px-4 text-slate-500 font-bold text-xs uppercase tracking-wider">Ngày & Giờ</th>
+                                <th className="py-4 px-4 text-slate-500 font-bold text-xs uppercase tracking-wider text-right">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {bookings.map(booking => (
+                                <tr key={booking.id} className="border-b border-slate-50 hover:bg-blue-50/50 transition-colors">
+                                    <td className="py-4 px-4 font-bold text-slate-700">#{booking.id}</td>
+                                    <td className="py-4 px-4 font-bold text-slate-800">{booking.user?.name || 'Khách ẩn danh'}</td>
+                                    <td className="py-4 px-4 text-blue-600 font-bold">{booking.court?.name}</td>
+
+                                    {/* 👉 3. THÊM DỮ LIỆU CỘT VỊ TRÍ */}
+                                    <td className="py-4 px-4 text-slate-600 text-sm">
+                                        <span className="flex items-center gap-1">📍 {booking.court?.location}</span>
+                                    </td>
+
+                                    <td className="py-4 px-4">
+                                        <div className="flex gap-2 text-xs font-bold">
+                                            <span className="bg-slate-200 text-slate-700 px-2 py-1 rounded-md">{booking.bookDate}</span>
+                                            <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded-md">{booking.timeSlot}</span>
+                                        </div>
+                                    </td>
+                                    <td className="py-4 px-4 flex gap-2 font-bold text-sm justify-end cursor-pointer">
+                                        <button
+                                            onClick={() => handleDelete(booking.id)}
+                                            className="px-4 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-500 hover:border-red-500 hover:text-white transition-all shadow-sm cursor-pointer"
+                                        >
+                                            Hủy lịch
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             )}
         </div>

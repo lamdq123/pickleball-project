@@ -88,10 +88,10 @@ export default function CourtCard({ court, setViewCourt, setSelectedCourt }: Cou
                     )}
                 </p>
                 <div className="flex gap-2">
-                    <button onClick={() => setViewCourt(court)} className="flex-1 py-2.5 bg-slate-100 text-slate-700 rounded-lg font-semibold hover:bg-slate-200 transition-colors border border-slate-200">
+                    <button onClick={() => setViewCourt(court)} className="flex-1 py-2.5 bg-slate-100 text-slate-700 rounded-lg font-semibold hover:bg-slate-200 transition-colors border border-slate-200 cursor-pointer">
                         Chi tiết
                     </button>
-                    <button onClick={() => setSelectedCourt(court)} className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-md shadow-blue-500/30">
+                    <button onClick={() => setSelectedCourt(court)} className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-md shadow-blue-500/30 cursor-pointer">
                         ĐẶT NGAY
                     </button>
                 </div>
