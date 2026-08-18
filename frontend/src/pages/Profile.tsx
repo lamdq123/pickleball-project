@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import LoadingSpinner from '../components/LoadingSpinner';
+import Navbar from '../components/client/Navbar';
 import { toast } from 'react-hot-toast/headless';
 
 interface Court { id: number; name: string; location: string; pricePerHour: number; imageUrl?: string; }
@@ -75,17 +76,7 @@ function Profile() {
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-800 pb-20">
-            {/* NAVBAR */}
-            <nav className="flex justify-between items-center px-6 md:px-10 py-4 bg-slate-900 text-white shadow-lg sticky top-0 z-30">
-                <Link to="/" className="text-2xl font-bold tracking-tight flex items-center gap-2 hover:text-emerald-400 transition-colors">
-                    <span className="text-emerald-400">🎾</span> Pickleball Club
-                </Link>
-                <div className="flex items-center gap-4">
-                    <span className="hidden md:inline text-slate-300">Xin chào, <strong className="font-semibold text-white">{currentUser.name}</strong></span>
-                    <Link to="/" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">Trang chủ</Link>
-                    <button onClick={handleLogout} className="px-4 py-2 text-sm font-medium border border-slate-600 rounded-lg hover:bg-red-500 hover:border-red-500 transition-colors">Đăng xuất</button>
-                </div>
-            </nav>
+            <Navbar currentUser={currentUser} onLogout={handleLogout} />
 
             <div className="max-w-6xl mx-auto px-4 mt-10">
                 <div className="flex flex-col md:flex-row gap-8">
