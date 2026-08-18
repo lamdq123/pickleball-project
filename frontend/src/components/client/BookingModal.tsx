@@ -68,13 +68,19 @@ export default function BookingModal({ selectedCourt, bookDate, setBookDate, tim
     };
 
     return (
-        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in-up">
+
+        <div
+            className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={onClose}
+        >
+            <div
+                className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in-up"
+                onClick={(e) => e.stopPropagation()}
+            >
 
                 {/* Header Modal */}
-                <div className="flex justify-between items-center mb-6">
+                <div className="mb-6">
                     <h3 className="text-2xl font-bold text-slate-800">Đặt Sân</h3>
-                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold transition-colors">✕</button>
                 </div>
 
                 {/* Tóm tắt thông tin Sân */}
