@@ -1,96 +1,126 @@
-import { type FormEvent, useState } from 'react';
-import toast from 'react-hot-toast';
-
-interface Court { id: number; name: string; location: string; pricePerHour: number; imageUrl?: string; reviews?: any[]; }
-
 interface CourtModalProps {
-    viewCourt: Court;
-    setViewCourt: (court: Court | null) => void;
-    setSelectedCourt: (court: Court) => void;
-    currentUser: any;            // 👉 Nhận thông tin user để biết ai đang đánh giá
-    refreshCourts: () => void;   // 👉 Hàm load lại danh sách sân sau khi đánh giá xong
+    viewCourt: any;
+    setViewCourt: (court: any) => void;
+    setSelectedCourt: (court: any) => void;
+    currentUser: any;
+    refreshCourts: () => void;
 }
 
-export default function CourtModal({ viewCourt, setViewCourt, setSelectedCourt, currentUser, refreshCourts }: CourtModalProps) {
-    const DEFAULT_COURT_IMG = "https://images.unsplash.com/photo-1622279457486-69d73ad5e4d2?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80";
+export default function CourtModal({ viewCourt, setViewCourt, setSelectedCourt }: CourtModalProps) {
+    const DEFAULT_COURT_IMG = "https://images.unsplash.com/photo-1622279457486-69d73ad5e4d2?auto=format&fit=crop&w=1000&q=80";
 
-    // State cho Form đánh giá
-    const [rating, setRating] = useState(5);
-    const [comment, setComment] = useState('');
+    // Logic tính giá Giờ Vàng
+    const hasGoldenHour = !!viewCourt.goldenHourStart && !!viewCourt.goldenHourEnd && !!viewCourt.goldenDiscount;
+    const goldenPrice = hasGoldenHour ? Math.round(viewCourt.pricePerHour * (100 - (viewCourt.goldenDiscount ?? 0)) / 100) : null;
 
+    // Logic tính toán Đánh giá (Review)
     const reviews = viewCourt.reviews || [];
     const totalReviews = reviews.length;
-    const realRating = totalReviews > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews).toFixed(1) : "5.0";
+    const realRating = totalReviews > 0
+        ? (reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / totalReviews).toFixed(1)
+        : "5.0";
 
-    const handleSubmitReview = async (e: FormEvent) => {
-        e.preventDefault();
-        if (!currentUser) return toast.error('Vui lòng đăng nhập để đánh giá!');
-
-        const res = await fetch('/api/reviews', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ rating, comment, courtId: viewCourt.id, userId: currentUser.id })
-        });
-
-        if (res.ok) {
-            toast.success('Cảm ơn bạn đã đánh giá!');
-            setComment('');
-            refreshCourts(); // Tải lại danh sách sân ngoài trang chủ
-            setViewCourt(null); // Đóng pop-up
-        } else {
-            toast.error('Không thể gửi đánh giá lúc này.');
-        }
+    // Hàm tiện ích: Vẽ số lượng Sao Vàng dựa trên điểm Rating
+    const renderStars = (rating: number) => {
+        return "★".repeat(rating) + "☆".repeat(5 - rating);
     };
 
     return (
-        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-            <div className="bg-white rounded-2xl w-full max-w-2xl overflow-hidden flex flex-col shadow-2xl transform scale-100 transition-all max-h-[90vh] overflow-y-auto">
-                {/* Ảnh cover */}
-                <div className="w-full h-64 sm:h-72 bg-slate-200 relative shrink-0">
+        // 👉 1. Bấm vào lớp nền mờ (đen) sẽ tự động tắt Modal
+        <div
+            className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setViewCourt(null)}
+        >
+            {/* 👉 2. Dùng stopPropagation để bấm vào vùng trắng không bị tắt Modal */}
+            <div
+                className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col md:flex-row animate-fade-in-up relative"
+                onClick={(e) => e.stopPropagation()}
+            >
+
+                {/* 🌟 CỘT TRÁI: ẢNH SÂN */}
+                <div className="md:w-1/2 relative h-64 md:h-auto bg-slate-100">
                     <img src={viewCourt.imageUrl || DEFAULT_COURT_IMG} alt={viewCourt.name} className="w-full h-full object-cover" />
-                    <button onClick={() => setViewCourt(null)} className="absolute top-4 right-4 bg-black/50 text-white hover:bg-red-500 rounded-full p-2 backdrop-blur-md transition-colors cursor-pointer">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    </button>
+
+                    <div className="absolute top-4 left-4 flex flex-col gap-2">
+                        {/* Huy hiệu hiển thị tổng quan sao */}
+                        <div className="bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-lg text-sm font-bold text-white flex items-center gap-1 shadow-sm">
+                            <span className="text-amber-400">★</span> {realRating} ({totalReviews} đánh giá)
+                        </div>
+                        {hasGoldenHour && (
+                            <div className="bg-amber-500/90 backdrop-blur-md px-3 py-1.5 rounded-lg text-xs font-bold text-white uppercase tracking-wide shadow-sm">
+                                Giờ vàng: {viewCourt.goldenHourStart} - {viewCourt.goldenHourEnd}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
-                <div className="w-full p-6 sm:p-8 flex flex-col bg-white">
-                    <div className="flex items-center justify-between mb-1">
-                        <h2 className="text-2xl font-bold text-slate-800">{viewCourt.name}</h2>
-                        <span className="flex items-center gap-1 font-bold text-amber-500 bg-amber-50 px-2 py-1 rounded-lg">
-                            ★ {realRating} <span className="text-xs text-slate-400 font-normal">({totalReviews})</span>
-                        </span>
-                    </div>
-                    <p className="text-slate-500 mb-6 flex items-center gap-1">📍 {viewCourt.location}</p>
+                {/* 🌟 CỘT PHẢI: THÔNG TIN SÂN & ĐÁNH GIÁ (Cho phép cuộn dọc) */}
+                <div className="md:w-1/2 p-6 md:p-8 flex flex-col h-full max-h-[90vh] overflow-y-auto">
 
-                    {/* Khu vực Gửi Đánh giá */}
-                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-6">
-                        <h4 className="font-bold text-slate-700 mb-3">Viết đánh giá của bạn</h4>
-                        <form onSubmit={handleSubmitReview} className="flex flex-col gap-3">
-                            <select value={rating} onChange={e => setRating(Number(e.target.value))} className="w-full md:w-1/3 px-3 py-2 border border-slate-200 rounded-lg outline-none focus:border-blue-500 text-sm">
-                                <option value={5}>⭐⭐⭐⭐⭐ Tuyệt vời</option>
-                                <option value={4}>⭐⭐⭐⭐ Rất tốt</option>
-                                <option value={3}>⭐⭐⭐ Bình thường</option>
-                                <option value={2}>⭐⭐ Tệ</option>
-                                <option value={1}>⭐ Rất tệ</option>
-                            </select>
-                            <div className="flex gap-2">
-                                <input type="text" placeholder="Bạn thấy sân này thế nào?" required value={comment} onChange={e => setComment(e.target.value)} className="flex-1 px-4 py-2 border border-slate-200 rounded-lg outline-none focus:border-blue-500 text-sm" />
-                                <button type="submit" className="bg-blue-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm cursor-pointer">Gửi</button>
+                    {/* Phần 1: Tên, Địa chỉ, Giá */}
+                    <div className="mb-6 border-b border-slate-100 pb-6">
+                        <h2 className="text-3xl font-black text-slate-800 mb-2">{viewCourt.name}</h2>
+                        <p className="text-slate-500 flex items-center gap-2 mb-4">📍 {viewCourt.location}</p>
+
+                        <div className="bg-slate-50 rounded-xl p-4 flex items-center justify-between border border-slate-100">
+                            <span className="text-slate-500 font-medium">Giá thuê:</span>
+                            <div className="text-right">
+                                {goldenPrice !== null ? (
+                                    <>
+                                        <span className="text-slate-400 line-through text-sm mr-2">{viewCourt.pricePerHour.toLocaleString('vi-VN')} đ</span>
+                                        <span className="text-blue-600 font-black text-xl">{goldenPrice.toLocaleString('vi-VN')} đ<span className="text-sm font-normal text-slate-500">/giờ</span></span>
+                                    </>
+                                ) : (
+                                    <span className="text-blue-600 font-black text-xl">{viewCourt.pricePerHour.toLocaleString('vi-VN')} đ<span className="text-sm font-normal text-slate-500">/giờ</span></span>
+                                )}
                             </div>
-                        </form>
+                        </div>
                     </div>
 
-                    <div className="pt-5 border-t border-slate-100 flex items-center justify-between mt-auto">
-                        <div>
-                            <p className="text-slate-500 text-sm font-medium mb-1">Giá thuê:</p>
-                            <p className="text-2xl font-extrabold text-blue-600">{viewCourt.pricePerHour.toLocaleString('vi-VN')}đ<span className="text-sm font-normal text-slate-500">/giờ</span></p>
-                        </div>
-                        <button onClick={() => { setSelectedCourt(viewCourt); setViewCourt(null); }} className="bg-slate-900 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg shadow-slate-900/20 cursor-pointer">
-                            ĐẶT LỊCH NGAY
-                        </button>
+                    {/* 👉 3. Phần 2: KHU VỰC HIỂN THỊ ĐÁNH GIÁ */}
+                    <div className="flex-1 mb-8">
+                        <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <span>💬</span> Đánh giá từ khách hàng
+                        </h3>
+
+                        {reviews.length === 0 ? (
+                            <div className="text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                                <span className="text-3xl block mb-2">⭐</span>
+                                <p className="text-slate-500 text-sm">Chưa có đánh giá nào cho sân này. Hãy là người đầu tiên trải nghiệm!</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {/* Lặp qua từng đánh giá để in ra */}
+                                {reviews.map((review: any) => (
+                                    <div key={review.id} className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="font-bold text-slate-700 text-sm">Khách hàng thành viên</span>
+                                            {/* In ra số sao khách chọn */}
+                                            <span className="text-amber-400 text-sm tracking-widest">{renderStars(review.rating)}</span>
+                                        </div>
+                                        {/* In ra bình luận */}
+                                        <p className="text-slate-600 text-sm">{review.comment || "Khách hàng không để lại bình luận."}</p>
+                                        <span className="text-xs text-slate-400 mt-2 block">
+                                            Đã đánh giá vào: {new Date(review.createdAt).toLocaleDateString('vi-VN')}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
+
+                    {/* Phần 3: Nút chuyển sang Đặt Sân */}
+                    <button
+                        onClick={() => {
+                            setViewCourt(null); // Đóng modal hiện tại
+                            setSelectedCourt(viewCourt); // Mở Modal đặt sân lên
+                        }}
+                        className="w-full py-4 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30 mt-auto cursor-pointer"
+                    >
+                        ĐẶT SÂN NGAY
+                    </button>
                 </div>
             </div>
         </div>
     );
-}
+}   

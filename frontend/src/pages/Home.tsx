@@ -36,11 +36,11 @@ const SLIDERS = [
     },
     {
         id: 3,
-        title: "🎾 PICKLEBALL ĐỈNH CAO",
+        title: "🎾 PICKLEBALL SIÊU TIỆN LỢI",
         subtitle: "Hệ thống sân bãi hiện đại, thảm thi đấu chống trượt chuẩn USAPA.",
         buttonText: "KHÁM PHÁ",
         linkTo: "#courts-section",
-        bgImage: "https://images.unsplash.com/photo-1580763850522-504d40a05c50?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTV8fHBpY2tsZWJhbGx8ZW58MHx8MHx8fDA%3D",
+        bgImage: "https://images.unsplash.com/photo-1580763850522-504d40a05c50?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTV8fHBpY2tlYmFsbHxlbnwwfHwwfHx8MA%3D%3D",
         overlay: "from-emerald-700/90 to-teal-500/80"
     }
 ];
