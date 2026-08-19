@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 import Home from './pages/Home';
 import Admin from './pages/Admin';
@@ -30,14 +31,29 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   // Nếu có vé, cho phép đi qua trạm gác để vào trang Admin
   return <>{children}</>;
 };
+// 💡 LOGIC: Con bot theo dõi URL, hễ đổi trang là cuộn lên đầu
+function ScrollToTop() {
+  const { pathname } = useLocation();
 
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'smooth' // 👉 Giúp cuộn lên mượt mà không bị giật cục
+    });
+  }, [pathname]);
+
+  return null;
+}
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Toaster position="top-right" reverseOrder={false} />
       <div style={{ fontFamily: 'Arial, sans-serif' }}>
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Navigate to="/home" replace />} />
+          <Route path="/home" element={<Home />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/my-courts" element={<MyCourts />} />
           <Route path="/promos" element={<Promos />} />
@@ -46,7 +62,7 @@ function App() {
 
 
 
-          
+
           <Route path="/admin" element={
             <ProtectedRoute>
               <Admin />
