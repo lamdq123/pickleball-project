@@ -90,7 +90,14 @@ export default function Navbar({ currentUser, onLogout }: NavbarProps) {
                                                 <span className="text-lg">⚙️</span> Trang Quản Trị
                                             </Link>
                                         )}
-                                        <Link to="/promos" className="font-medium text-slate-300 hover:text-white transition-colors">🎁 Ưu Đãi</Link>
+                                        <Link
+                                            to="/promos"
+                                            onClick={() => setIsDropdownOpen(false)}
+                                            className="w-full px-5 py-2.5 text-sm hover:bg-emerald-50 hover:text-emerald-600 transition-colors font-medium flex items-center gap-3"
+                                        >
+                                            <span className="text-lg" aria-hidden="true">🎁</span>
+                                            <span>Ưu đãi</span>
+                                        </Link>
                                     </div>
 
                                     {/* Nút Đăng xuất đỏ chót */}

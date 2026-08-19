@@ -53,11 +53,10 @@ model Promo {
   id          Int     @id @default(autoincrement())
   code        String  @unique
   discount    Int
-  
-  // 👉 3 Trường mới thêm vào:
-  description String? // Lời quảng cáo (VD: Siêu sale 8/8)
-  validFrom   String? // Ngày bắt đầu (YYYY-MM-DD)
-  validTo     String? // Ngày kết thúc (YYYY-MM-DD)
+  isPercent   Boolean @default(false) // 👉 THÊM DÒNG NÀY ĐỂ LƯU TRẠNG THÁI %
+  description String?
+  validFrom   String?
+  validTo     String?
 }
 
 // BẢNG ĐÁNH GIÁ (RATING)

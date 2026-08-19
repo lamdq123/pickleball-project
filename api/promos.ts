@@ -34,6 +34,7 @@ export default async function handler(req: any, res: any) {
                 data: {
                     code: data.code.toUpperCase(),
                     discount: Number(data.discount),
+                    isPercent: Boolean(data.isPercent), // 👉 THÊM DÒNG NÀY ĐỂ LƯU VÀO DB
                     description: data.description || null,
                     validFrom: data.validFrom || null,
                     validTo: data.validTo || null
