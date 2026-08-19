@@ -30,7 +30,11 @@ export default function MyCourts() {
 
             if (res.ok) {
                 const data = await res.json();
-                setHistory(data);
+
+                // 👉 TỰ ĐỘNG SẮP XẾP: Lịch đặt mới nhất (ID lớn nhất) lên đầu
+                const sortedData = data.sort((a: any, b: any) => b.id - a.id);
+                setHistory(sortedData);
+
             } else if (res.status === 401) {
                 toast.error("Phiên đăng nhập đã hết hạn!");
                 handleLogout();
@@ -52,7 +56,7 @@ export default function MyCourts() {
     // 💡 LOGIC: XỬ LÝ HỦY SÂN
     const handleCancelBooking = async (id: number) => {
         if (!window.confirm('Bạn có chắc chắn muốn hủy lịch đặt sân này không?')) return;
-        
+
         try {
             const currentToken = localStorage.getItem('customer_token');
             const res = await fetch(`/api/bookings?id=${id}`, {
@@ -75,7 +79,7 @@ export default function MyCourts() {
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col">
             <Navbar currentUser={currentUser} onLogout={handleLogout} />
-            
+
             <main className="flex-1 max-w-5xl mx-auto px-6 py-12 w-full animate-fade-in-up">
                 <div className="flex items-center gap-3 mb-8 border-b border-slate-200 pb-4">
                     <span className="text-3xl">🏟️</span>
@@ -105,9 +109,9 @@ export default function MyCourts() {
                                         <span className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-lg border border-emerald-100">⏰ {booking.timeSlot}</span>
                                     </div>
                                 </div>
-                                
+
                                 {/* 👉 Nút bấm hủy sân */}
-                                <button 
+                                <button
                                     onClick={() => handleCancelBooking(booking.id)}
                                     className="px-6 py-2.5 bg-red-50 text-red-600 font-bold rounded-xl hover:bg-red-500 hover:text-white transition-colors border border-red-100 w-full md:w-auto shadow-sm cursor-pointer"
                                 >
