@@ -112,6 +112,7 @@ export default function Home() {
         }
     };
 
+    // 1. SỬA HÀM ĐĂNG NHẬP
     const handleAuth = async (e: FormEvent) => {
         e.preventDefault();
         const res = await fetch(`/api/customer?action=${authMode}`, {
@@ -126,16 +127,31 @@ export default function Home() {
             } else {
                 localStorage.setItem('customer_token', data.token);
                 localStorage.setItem('customer_info', JSON.stringify(data.user));
+
+                // 👉 BÍ QUYẾT Ở ĐÂY: Lưu chung token cho cả Admin
+                localStorage.setItem('token', data.token);
+
                 setToken(data.token); setCurrentUser(data.user);
-                toast.success('Đăng nhập thành công!');
+
+                // 👉 Nếu tài khoản có quyền ADMIN thì báo thành công và đẩy vào luôn trang Quản trị
+                if (data.user.role === 'ADMIN') {
+                    toast.success('Đăng nhập Quản trị viên thành công!');
+                    navigate('/admin');
+                } else {
+                    toast.success('Đăng nhập thành công!');
+                }
             }
             setAuthForm({ name: '', email: '', phone: '', password: '' });
         } else toast.error(data.error);
     };
 
+    // 2. SỬA HÀM ĐĂNG XUẤT (Để xóa sạch thẻ của cả 2 bên)
     const handleLogout = () => {
-        localStorage.removeItem('customer_token'); localStorage.removeItem('customer_info');
-        setToken(''); setCurrentUser(null);
+        localStorage.removeItem('customer_token');
+        localStorage.removeItem('customer_info');
+        localStorage.removeItem('token'); // 👉 Xóa luôn thẻ Admin
+        setToken('');
+        setCurrentUser(null);
         toast.success('Đã đăng xuất!');
     };
 

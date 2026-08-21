@@ -80,14 +80,13 @@ export default function Navbar({ currentUser, onLogout }: NavbarProps) {
                                         >
                                             <span className="text-lg">🏟️</span> Sân của tôi
                                         </Link>
-                                        {/* 💡 CHỈ HIỂN THỊ TRANG QUẢN TRỊ NẾU LÀ ADMIN */}
-                                        {currentUser.role === 'admin' && (
+                                        {/* 👉 Tự động kiểm tra: Chỉ Admin mới nhìn thấy nút này */}
+                                        {currentUser?.role === 'admin' && (
                                             <Link
                                                 to="/admin"
-                                                onClick={() => setIsDropdownOpen(false)}
-                                                className="w-full px-5 py-2.5 text-sm hover:bg-amber-50 hover:text-amber-600 transition-colors font-bold flex items-center gap-3 border-t border-slate-50 mt-1 pt-3"
+                                                className="font-bold text-amber-400 hover:text-amber-300 transition-colors bg-amber-400/10 px-3 py-1.5 rounded-lg border border-amber-400/30"
                                             >
-                                                <span className="text-lg">⚙️</span> Trang Quản Trị
+                                                ⚙️ Trang Quản Trị
                                             </Link>
                                         )}
                                         <Link
