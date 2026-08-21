@@ -93,14 +93,51 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const user = verifyUser(req, res);
     if (!user) return;
     const id = req.query.id as string;
+    const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : '';
     try {
-      const booking = await prisma.booking.findUnique({ where: { id: Number(id) } });
+      const booking = await prisma.booking.findUnique({
+        where: { id: Number(id) },
+        include: { user: true, court: true },
+      });
       if (!booking) return res.status(404).json({ error: 'Không tìm thấy lịch đặt.' });
       if (user.role !== 'ADMIN' && booking.userId !== Number(user.id)) {
         return res.status(403).json({ error: 'Bạn không có quyền hủy lịch đặt này.' });
       }
+      if (user.role === 'ADMIN' && !reason) {
+        return res.status(400).json({ error: 'Vui lòng nhập lý do hủy lịch.' });
+      }
 
       await prisma.booking.delete({ where: { id: Number(id) } });
+
+      try {
+        const cancellationReason = user.role === 'ADMIN'
+          ? reason
+          : 'Khách hàng đã tự hủy lịch đặt sân.';
+        await transporter.sendMail({
+          from: `"Pickleball Court" <${process.env.EMAIL_USER}>`,
+          to: booking.user.email,
+          subject: user.role === 'ADMIN'
+            ? 'Thông báo: Lịch đặt sân đã bị hủy'
+            : 'Xác nhận: Bạn đã hủy lịch đặt sân',
+          html: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+              <h2 style="color: #dc2626;">Thông báo hủy lịch đặt sân</h2>
+              <p>Xin chào <strong>${booking.user.name || 'khách hàng'}</strong>,</p>
+              <p>Lịch đặt sân của bạn đã được hủy với thông tin:</p>
+              <ul>
+                <li><strong>Sân:</strong> ${booking.court.name}</li>
+                <li><strong>Ngày chơi:</strong> ${booking.bookDate}</li>
+                <li><strong>Thời gian:</strong> ${booking.timeSlot}</li>
+              </ul>
+              <p><strong>Lý do:</strong> ${cancellationReason}</p>
+              <p style="color: #555;">Nếu cần hỗ trợ, vui lòng liên hệ Pickleball Club.</p>
+            </div>
+          `,
+        });
+      } catch (emailError) {
+        console.log("Hủy lịch ok nhưng gửi email lỗi:", emailError);
+      }
+
       return res.status(200).json({ message: 'Xóa thành công!' });
     } catch (error) {
       return res.status(500).json({ error: 'Không thể hủy lịch.' });

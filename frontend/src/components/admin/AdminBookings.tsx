@@ -32,16 +32,23 @@ export default function AdminBookings() {
     useEffect(() => { fetchBookings(); }, []);
 
     const handleDelete = async (id: number) => {
-        if (!window.confirm("Bạn có chắc chắn muốn hủy lịch này?")) return;
+        const reason = window.prompt("Nhập lý do hủy lịch:");
+        if (reason === null) return;
+        if (!reason.trim()) {
+            toast.error("Vui lòng nhập lý do hủy lịch!");
+            return;
+        }
         const res = await fetch(`/api/bookings?id=${id}`, {
             method: 'DELETE',
-            headers: getHeaders()
+            headers: getHeaders(),
+            body: JSON.stringify({ reason: reason.trim() })
         });
         if (res.ok) {
             toast.success("Đã hủy lịch thành công!");
             fetchBookings();
         } else {
-            toast.error("Lỗi khi hủy lịch!");
+            const data = await res.json();
+            toast.error(data.error || "Lỗi khi hủy lịch!");
         }
     };
 
