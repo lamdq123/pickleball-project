@@ -40,7 +40,7 @@ export default function Navbar({ currentUser, onLogout }: NavbarProps) {
                                 Đăng nhập
                             </Link>
                             <Link
-                                to="/login?mode=register"
+                                to="/register"
                                 className="px-4 py-2 text-sm font-bold text-slate-900 bg-emerald-400 hover:bg-emerald-300 rounded-lg transition-colors"
                             >
                                 Đăng ký

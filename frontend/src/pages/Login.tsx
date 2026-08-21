@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Navbar from '../components/client/Navbar';
 import Footer from '../components/client/Footer';
@@ -7,15 +7,16 @@ import AuthCard from '../components/client/AuthCard';
 
 export default function Login() {
     const navigate = useNavigate();
+    const { pathname } = useLocation();
     const [searchParams] = useSearchParams();
     const [authMode, setAuthMode] = useState<'login' | 'register'>(
-        searchParams.get('mode') === 'register' ? 'register' : 'login'
+        pathname === '/register' || searchParams.get('mode') === 'register' ? 'register' : 'login'
     );
     const [authForm, setAuthForm] = useState({ name: '', email: '', phone: '', password: '' });
 
     useEffect(() => {
-        setAuthMode(searchParams.get('mode') === 'register' ? 'register' : 'login');
-    }, [searchParams]);
+        setAuthMode(pathname === '/register' || searchParams.get('mode') === 'register' ? 'register' : 'login');
+    }, [pathname, searchParams]);
 
     const handleAuth = async (e: FormEvent) => {
         e.preventDefault();

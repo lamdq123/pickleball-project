@@ -59,6 +59,7 @@ function App() {
           <Route path="/my-courts" element={<MyCourts />} />
           <Route path="/promos" element={<Promos />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Login />} />
 
 
 
