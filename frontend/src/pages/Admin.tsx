@@ -36,6 +36,7 @@ function Admin() {
     const handleLogout = () => {
         localStorage.removeItem('customer_token');
         localStorage.removeItem('customer_info');
+        localStorage.removeItem('token');
         toast.success('Đã đăng xuất thành công!');
         navigate('/');
     };

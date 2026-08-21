@@ -12,6 +12,7 @@ export default function Pricing() {
     const handleLogout = () => {
         localStorage.removeItem('customer_token');
         localStorage.removeItem('customer_info');
+        localStorage.removeItem('token');
         setCurrentUser(null);
         toast.success('Đã đăng xuất!');
         navigate('/');

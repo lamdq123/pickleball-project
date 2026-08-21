@@ -30,6 +30,7 @@ export default function Promos() {
             <Navbar currentUser={currentUser} onLogout={() => {
                 localStorage.removeItem('customer_token');
                 localStorage.removeItem('customer_info');
+                localStorage.removeItem('token');
                 window.location.href = '/';
             }} />
             

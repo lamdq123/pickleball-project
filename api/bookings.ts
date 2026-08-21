@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { PrismaClient } from '@prisma/client';
 import nodemailer from 'nodemailer';
-import { verifyAdmin } from './auth-middleware';
+import { verifyAdmin, verifyUser } from './auth-middleware';
 
 const prisma = new PrismaClient();
 
@@ -21,10 +21,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // 1. GET: Lấy danh sách (Chỉ Admin được xem)
   // ==========================================
   if (method === 'GET') {
-    if (!verifyAdmin(req, res)) return;
+    const user = verifyUser(req, res);
+    if (!user) return;
 
     try {
       const bookings = await prisma.booking.findMany({
+        where: user.role === 'ADMIN' ? undefined : { userId: Number(user.id) },
         include: { user: true, court: true },
       });
       return res.status(200).json(bookings);
@@ -88,11 +90,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // 3. DELETE: Hủy sân (CỦA ADMIN -> BẮT BUỘC TRÌNH VÉ)
   // ==========================================
   if (method === 'DELETE') {
-    // ✅ BẬT LẠI TRẠM GÁC Ở ĐÂY
-    if (!verifyAdmin(req, res)) return;
-
+    const user = verifyUser(req, res);
+    if (!user) return;
     const id = req.query.id as string;
     try {
+      const booking = await prisma.booking.findUnique({ where: { id: Number(id) } });
+      if (!booking) return res.status(404).json({ error: 'Không tìm thấy lịch đặt.' });
+      if (user.role !== 'ADMIN' && booking.userId !== Number(user.id)) {
+        return res.status(403).json({ error: 'Bạn không có quyền hủy lịch đặt này.' });
+      }
+
       await prisma.booking.delete({ where: { id: Number(id) } });
       return res.status(200).json({ message: 'Xóa thành công!' });
     } catch (error) {

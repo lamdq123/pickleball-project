@@ -51,6 +51,7 @@ export default function MyCourts() {
     const handleLogout = () => {
         localStorage.removeItem('customer_token');
         localStorage.removeItem('customer_info');
+        localStorage.removeItem('token');
         setCurrentUser(null);
         navigate('/');
     };
