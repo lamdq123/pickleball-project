@@ -31,6 +31,22 @@ export default function Navbar({ currentUser, onLogout }: NavbarProps) {
 
                 {/* Khu vực Menu người dùng */}
                 <div className="flex items-center gap-6">
+                    {!currentUser && (
+                        <div className="flex items-center gap-3">
+                            <Link
+                                to="/login"
+                                className="px-4 py-2 text-sm font-semibold text-slate-200 hover:text-white transition-colors"
+                            >
+                                Đăng nhập
+                            </Link>
+                            <Link
+                                to="/login?mode=register"
+                                className="px-4 py-2 text-sm font-bold text-slate-900 bg-emerald-400 hover:bg-emerald-300 rounded-lg transition-colors"
+                            >
+                                Đăng ký
+                            </Link>
+                        </div>
+                    )}
                     {currentUser && (
                         <div className="relative" ref={dropdownRef}>
 
