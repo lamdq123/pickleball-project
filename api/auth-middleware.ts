@@ -18,7 +18,7 @@ export function verifyAdmin(req: VercelRequest, res: VercelResponse): boolean {
         const decoded = jwt.verify(token, JWT_SECRET) as any;
 
         // 3. Phân quyền: Kiểm tra xem có đúng là Admin không
-        if (decoded.role !== 'admin') {
+        if (decoded.role !== 'ADMIN') {
             res.status(403).json({ error: 'Lệnh cấm! Bạn không có đặc quyền của Admin.' });
             return false;
         }

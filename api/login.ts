@@ -30,7 +30,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         // 3. Kiểm tra xem có phải Admin không
-        if (user.role !== 'admin') {
+        if (user.role !== 'ADMIN') {
             return res.status(403).json({ error: 'Bạn không có quyền truy cập trang quản trị!' });
         }
 

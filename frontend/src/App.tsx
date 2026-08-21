@@ -20,12 +20,12 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   // ✅ Ổ KHÓA MỚI (Kiểm tra xem trong túi có tấm vé admin_token hợp lệ không):
-  const hasToken = localStorage.getItem('admin_token');
+  const hasToken = localStorage.getItem("customer_token") !== null;
 
   // ✅ Đổi thành điều kiện check mới:
   if (!hasToken) {
     // Nếu không có vé JWT, bắt quay xe về trang login
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/home" replace />;
   }
 
   // Nếu có vé, cho phép đi qua trạm gác để vào trang Admin
