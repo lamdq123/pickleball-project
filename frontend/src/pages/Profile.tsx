@@ -43,7 +43,7 @@ export default function Profile() {
                         </div>
                         <h3 className="text-3xl font-black text-slate-800 tracking-tight">{currentUser.name}</h3>
                         <p className="text-slate-500 font-medium mt-1">
-                            {currentUser.role === 'admin' ? 'Quản trị viên hệ thống' : 'Khách hàng thành viên'}
+                            {currentUser.role === 'ADMIN' ? 'Quản trị viên hệ thống' : 'Khách hàng thành viên'}
                         </p>
                     </div>
 

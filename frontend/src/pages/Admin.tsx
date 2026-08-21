@@ -24,7 +24,7 @@ function Admin() {
         const userInfo = JSON.parse(localStorage.getItem('customer_info') || 'null');
         const token = localStorage.getItem('customer_token');
 
-        if (!token || !userInfo || userInfo.role !== 'admin') {
+        if (!token || !userInfo || userInfo.role !== 'ADMIN') {
             toast.error("Bạn chưa đăng nhập hoặc không có quyền truy cập!");
             navigate('/');
             return;
