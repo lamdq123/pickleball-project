@@ -20,7 +20,7 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   // ✅ Ổ KHÓA MỚI (Kiểm tra xem trong túi có tấm vé admin_token hợp lệ không):
-  const hasToken = localStorage.getItem("admin_token") !== null;
+  const hasToken = localStorage.getItem("token") !== null;
 
   // ✅ Đổi thành điều kiện check mới:
   if (!hasToken) {
