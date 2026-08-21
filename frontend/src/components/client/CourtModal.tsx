@@ -1,3 +1,5 @@
+import { formatDate } from '../../utils/date';
+
 interface CourtModalProps {
     viewCourt: any;
     setViewCourt: (court: any) => void;
@@ -101,7 +103,7 @@ export default function CourtModal({ viewCourt, setViewCourt, setSelectedCourt }
                                         {/* In ra bình luận */}
                                         <p className="text-slate-600 text-sm">{review.comment || "Khách hàng không để lại bình luận."}</p>
                                         <span className="text-xs text-slate-400 mt-2 block">
-                                            Đã đánh giá vào: {new Date(review.createdAt).toLocaleDateString('vi-VN')}
+                                            Đã đánh giá vào: {formatDate(review.createdAt)}
                                         </span>
                                     </div>
                                 ))}

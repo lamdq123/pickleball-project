@@ -4,9 +4,11 @@ import { Link } from 'react-router-dom';
 interface NavbarProps {
     currentUser: any;
     onLogout: () => void;
+    searchTerm?: string;
+    setSearchTerm?: (term: string) => void;
 }
 
-export default function Navbar({ currentUser, onLogout }: NavbarProps) {
+export default function Navbar({ currentUser, onLogout, searchTerm, setSearchTerm }: NavbarProps) {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -23,12 +25,27 @@ export default function Navbar({ currentUser, onLogout }: NavbarProps) {
 
     return (
         <nav className="bg-slate-900 text-white shadow-md sticky top-0 z-40">
-            <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex flex-wrap gap-3 justify-between items-center">
                 {/* Logo thương hiệu */}
                 <Link to="/" className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
                     <span className="text-emerald-400 text-3xl">🎾</span> Pickleball Club
                 </Link>
 
+                {setSearchTerm && (
+                    <div className="order-3 md:order-0 w-full md:flex-1 md:max-w-lg md:mx-6 flex gap-2 relative">
+                        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m21 21-6-6m2-5a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z" />
+                        </svg>
+                        <input
+                            type="search"
+                            value={searchTerm || ''}
+                            onChange={(event) => setSearchTerm(event.target.value)}
+                            placeholder="Tìm tên sân hoặc khu vực..."
+                            aria-label="Tìm kiếm sân"
+                            className="w-full pl-10 pr-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white placeholder:text-slate-400 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20"
+                        />
+                    </div>
+                )}
                 {/* Khu vực Menu người dùng */}
                 <div className="flex items-center gap-6">
                     {!currentUser && (
@@ -100,9 +117,11 @@ export default function Navbar({ currentUser, onLogout }: NavbarProps) {
                                         {currentUser?.role === 'ADMIN' && (
                                             <Link
                                                 to="/admin"
-                                                className="font-bold text-amber-400 hover:text-amber-300 transition-colors bg-amber-400/10 px-3 py-1.5 rounded-lg border border-amber-400/30"
+                                                onClick={() => setIsDropdownOpen(false)}
+                                                className="w-full px-5 py-2.5 text-sm text-amber-600 hover:bg-amber-50 transition-colors font-bold flex items-center gap-3"
                                             >
-                                                ⚙️ Trang Quản Trị
+                                                <span className="text-lg" aria-hidden="true">⚙️</span>
+                                                <span>Trang Quản Trị</span>
                                             </Link>
                                         )}
                                         <Link

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import LoadingSpinner from '../LoadingSpinner';
+import { formatDate } from '../../utils/date';
 
 // 👉 1. Bỏ { setActiveTab } đi, để trống ngoặc đơn ()
 export default function AdminDashboard() {
@@ -56,7 +57,7 @@ export default function AdminDashboard() {
     }, {});
 
     const chartData = Object.keys(revenueByDate).map(date => ({
-        name: date, "Doanh thu": revenueByDate[date]
+        name: formatDate(date), "Doanh thu": revenueByDate[date]
     })).sort((a, b) => a.name.localeCompare(b.name));
 
     const revenueByCourt = bookings.reduce((acc: any, b) => {
@@ -89,7 +90,7 @@ export default function AdminDashboard() {
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-5 hover:shadow-md transition-shadow">
                     <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center text-3xl shadow-inner">👥</div>
                     <div>
-                        <p className="text-slate-500 font-semibold text-sm uppercase tracking-wider">Tổng khách hàng</p>
+                        <p className="text-slate-500 font-semibold text-sm uppercase tracking-wider">Tổng số tài khoản</p>
                         <p className="text-3xl font-extrabold text-slate-800 mt-1">{totalUsers} <span className="text-lg text-slate-500 font-medium">người</span></p>
                     </div>
                 </div>

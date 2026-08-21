@@ -1,6 +1,7 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import toast from 'react-hot-toast';
 import LoadingSpinner from '../LoadingSpinner';
+import { formatDate } from '../../utils/date';
 
 export default function AdminPromos() {
     const [promos, setPromos] = useState<any[]>([]);
@@ -134,8 +135,8 @@ export default function AdminPromos() {
                                         <td className="px-6 py-4 text-center text-sm font-medium text-slate-500">
                                             {p.validFrom || p.validTo ? (
                                                 <div className="flex flex-col gap-1 items-center">
-                                                    {p.validFrom && <span className="bg-slate-100 px-2 py-1 rounded">Từ: {p.validFrom}</span>}
-                                                    {p.validTo && <span className="bg-slate-100 px-2 py-1 rounded">Đến: {p.validTo}</span>}
+                                                    {p.validFrom && <span className="bg-slate-100 px-2 py-1 rounded">Từ: {formatDate(p.validFrom)}</span>}
+                                                    {p.validTo && <span className="bg-slate-100 px-2 py-1 rounded">Đến: {formatDate(p.validTo)}</span>}
                                                 </div>
                                             ) : 'Không giới hạn'}
                                         </td>

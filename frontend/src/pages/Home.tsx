@@ -138,7 +138,7 @@ export default function Home() {
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col">
-            <Navbar currentUser={currentUser} onLogout={handleLogout} />
+            <Navbar currentUser={currentUser} onLogout={handleLogout} searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
             <main className="flex-1">
 
                 {/* BANNER SLIDER */}
@@ -168,7 +168,7 @@ export default function Home() {
                             <h2 className="text-2xl font-bold text-slate-800 border-l-4 border-blue-600 pl-3">Danh sách sân</h2>
                         </div>
 
-                        <CourtFilter searchTerm={searchTerm} setSearchTerm={setSearchTerm} priceFilter={priceFilter} setPriceFilter={setPriceFilter} />
+                        <CourtFilter priceFilter={priceFilter} setPriceFilter={setPriceFilter} />
 
                         {isLoading ? (
                             <LoadingSpinner />

@@ -3,6 +3,7 @@ import toast from 'react-hot-toast'; // 👉 1. Thêm thư viện thông báo
 import Navbar from '../components/client/Navbar';
 import Footer from '../components/client/Footer';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { formatDate } from '../utils/date';
 
 export default function Promos() {
     const [promos, setPromos] = useState<any[]>([]);
@@ -70,8 +71,8 @@ export default function Promos() {
                                         <div>
                                             <h3 className="font-bold text-slate-800 text-lg line-clamp-2">{promo.description || 'Ưu đãi đặt sân'}</h3>
                                             <div className="mt-3 space-y-1 text-xs font-medium text-slate-500">
-                                                {promo.validFrom && <p>Mở bán: <span className="text-slate-700">{promo.validFrom}</span></p>}
-                                                {promo.validTo && <p>HSD: <span className="text-slate-700">{promo.validTo}</span></p>}
+                                                {promo.validFrom && <p>Mở bán: <span className="text-slate-700">{formatDate(promo.validFrom)}</span></p>}
+                                                {promo.validTo && <p>HSD: <span className="text-slate-700">{formatDate(promo.validTo)}</span></p>}
                                             </div>
                                         </div>
                                         

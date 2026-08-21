@@ -14,6 +14,11 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+function formatDate(date: string): string {
+  const [year, month, day] = date.split('T')[0].split('-');
+  return year && month && day ? `${day}-${month}-${year}` : date;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const method = req.method;
 
@@ -69,7 +74,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 <p>Chúng tôi đã ghi nhận lịch đặt sân của bạn thành công. Thông tin chi tiết:</p>
                 <ul>
                   <li><strong>Sân:</strong> ${newBooking.court.name || 'Không xác định'}</li>
-                  <li><strong>Ngày chơi:</strong> ${newBooking.bookDate}</li>
+                  <li><strong>Ngày chơi:</strong> ${formatDate(newBooking.bookDate)}</li>
                   <li><strong>Thời gian:</strong> ${newBooking.timeSlot}</li>
                 </ul>
                 <p style="color: #555;">Chúc bạn có những trận đấu thật tuyệt vời! ❤️</p>
@@ -126,11 +131,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               <p>Lịch đặt sân của bạn đã được hủy với thông tin:</p>
               <ul>
                 <li><strong>Sân:</strong> ${booking.court.name}</li>
-                <li><strong>Ngày chơi:</strong> ${booking.bookDate}</li>
+                <li><strong>Ngày chơi:</strong> ${formatDate(booking.bookDate)}</li>
                 <li><strong>Thời gian:</strong> ${booking.timeSlot}</li>
               </ul>
               <p><strong>Lý do:</strong> ${cancellationReason}</p>
-              <p style="color: #555;">Nếu cần hỗ trợ, vui lòng liên hệ Pickleball Club.</p>
+              <p style="color: #555;">Nếu cần hỗ trợ, vui lòng liên hệ tới SDT 0352614404 để được tư vấn.</p>
             </div>
           `,
         });

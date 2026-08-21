@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import Navbar from '../components/client/Navbar';
 import Footer from '../components/client/Footer';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { formatDate } from '../utils/date';
 
 export default function MyCourts() {
     const navigate = useNavigate();
@@ -136,7 +137,7 @@ export default function MyCourts() {
                                     <h3 className="text-lg font-bold text-slate-800">{booking.court.name}</h3>
                                     <p className="text-sm text-slate-500 flex items-center gap-1 mt-1">📍 {booking.court.location}</p>
                                     <div className="mt-3 flex gap-3 text-sm font-medium">
-                                        <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-lg border border-blue-100">📅 {booking.bookDate}</span>
+                                        <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-lg border border-blue-100">📅 {formatDate(booking.bookDate)}</span>
                                         <span className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-lg border border-emerald-100">⏰ {booking.timeSlot}</span>
                                     </div>
                                 </div>
